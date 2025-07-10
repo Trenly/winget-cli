@@ -13,6 +13,9 @@
 
 namespace AppInstaller::YAML::Wrapper
 {
+    static constexpr char c_utf16BOM[2] = { static_cast<char>(0xFF), static_cast<char>(0xFE) };
+    static constexpr char c_utf8BOM[3] = { static_cast<char>(0xEF), static_cast<char>(0xBB), static_cast<char>(0xBF) };
+
     // A libyaml yaml_document_t.
     // A parsed document, created by the Parser.
     struct Document

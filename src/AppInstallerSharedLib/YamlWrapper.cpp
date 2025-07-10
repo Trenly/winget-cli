@@ -343,9 +343,6 @@ namespace AppInstaller::YAML::Wrapper
 
     void Parser::PrepareInput()
     {
-        constexpr char c_utf16BOM[2] = { static_cast<char>(0xFF), static_cast<char>(0xFE) };
-        constexpr char c_utf8BOM[3] = { static_cast<char>(0xEF), static_cast<char>(0xBB), static_cast<char>(0xBF) };
-
         // If input has a BOM, we want to pass it on through.
         // Check for UTF-16 BOMs
         if (m_input.size() >= 2 &&

@@ -106,10 +106,18 @@ namespace AppInstaller::YAML
             std::string line;
             size_t currentLine = 1;
 
+            // convert BOMs to strings
+            std::string utf16BOM(AppInstaller::YAML::Wrapper::c_utf16BOM, sizeof(AppInstaller::YAML::Wrapper::c_utf16BOM));
+            std::string utf8BOM(AppInstaller::YAML::Wrapper::c_utf8BOM, sizeof(AppInstaller::YAML::Wrapper::c_utf8BOM));
+
             // Search for the schema header string in the comments before the root node.
             while (currentLine < rootNodeLine && std::getline(input, line))
             {
                 std::string comment = Utility::Trim(line);
+
+                // Remove byte order marks from the line
+				Utility::FindAndReplace(comment, utf16BOM, ""); 
+                Utility::FindAndReplace(comment, utf8BOM, "");
 
                 // Check if the line is a comment
                 if (!comment.empty() && comment[0] == '#')
