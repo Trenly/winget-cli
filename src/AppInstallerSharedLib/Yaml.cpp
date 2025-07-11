@@ -107,7 +107,7 @@ namespace AppInstaller::YAML
             size_t currentLine = 1;
 
             // convert BOMs to strings
-            std::string utf16BOM(AppInstaller::YAML::Wrapper::c_utf16BOM, sizeof(AppInstaller::YAML::Wrapper::c_utf16BOM));
+std::string utf16BOM(AppInstaller::YAML::Wrapper::c_utf16BOM, sizeof(AppInstaller::YAML::Wrapper::c_utf16BOM));
             std::string utf8BOM(AppInstaller::YAML::Wrapper::c_utf8BOM, sizeof(AppInstaller::YAML::Wrapper::c_utf8BOM));
 
             // Search for the schema header string in the comments before the root node.
