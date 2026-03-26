@@ -332,6 +332,12 @@ namespace AppInstaller::Manifest
 
             InapplicabilityFlags IsApplicable(const ManifestInstaller& installer) override
             {
+                // If the installer has UpdateBehavior set to UninstallPrevious, allow any installer type
+                if (installer.UpdateBehavior == UpdateBehaviorEnum::UninstallPrevious)
+                {
+                    return InapplicabilityFlags::None;
+                }
+
                 return IsInstallerCompatibleWith(installer, m_installedType) ? InapplicabilityFlags::None : InapplicabilityFlags::InstalledType;
             }
 

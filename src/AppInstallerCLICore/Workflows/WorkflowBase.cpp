@@ -619,7 +619,7 @@ namespace AppInstaller::CLI::Workflow
         return HandleException(&context, exception);
     }
 
-    AppInstaller::Manifest::ManifestComparator::Options GetManifestComparatorOptions(const Execution::Context& context, const IPackageVersion::Metadata& metadata)
+    AppInstaller::Manifest::ManifestComparator::Options GetManifestComparatorOptions(const Execution::Context& context, const IPackageVersion::Metadata& metadata, bool ignoreInstalledType)
     {
         AppInstaller::Manifest::ManifestComparator::Options options;
         bool getAllowedArchitecturesFromMetadata = false;
@@ -665,7 +665,7 @@ namespace AppInstaller::CLI::Workflow
             options.RequestedInstallerLocale = context.Args.GetArg(Execution::Args::Type::Locale);
         }
 
-        Repository::GetManifestComparatorOptionsFromMetadata(options, metadata, getAllowedArchitecturesFromMetadata);
+        Repository::GetManifestComparatorOptionsFromMetadata(options, metadata, getAllowedArchitecturesFromMetadata, ignoreInstalledType);
 
         return options;
     }

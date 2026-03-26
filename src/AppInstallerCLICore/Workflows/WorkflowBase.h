@@ -93,7 +93,8 @@ namespace AppInstaller::CLI::Workflow
     HRESULT HandleException(Execution::Context& context, std::exception_ptr exception);
 
     // Fills the options from the given context and metadata.
-    AppInstaller::Manifest::ManifestComparator::Options GetManifestComparatorOptions(const Execution::Context& context, const Repository::IPackageVersion::Metadata& metadata);
+    // If ignoreInstalledType is true, the CurrentlyInstalledType will not be set from metadata (used for --uninstall-previous).
+    AppInstaller::Manifest::ManifestComparator::Options GetManifestComparatorOptions(const Execution::Context& context, const Repository::IPackageVersion::Metadata& metadata, bool ignoreInstalledType = false);
 
     // Creates the source object.
     // Required Args: None

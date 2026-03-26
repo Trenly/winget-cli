@@ -51,7 +51,9 @@ namespace AppInstaller::CLI::Workflow
             installedVersion = Utility::Version(installedPackage->GetProperty(PackageVersionProperty::Version));
         }
 
-        Manifest::ManifestComparator manifestComparator(GetManifestComparatorOptions(context, isUpgrade ? installedPackage->GetMetadata() : IPackageVersion::Metadata{}));
+        // If --uninstall-previous flag is set, ignore the installed type filter to allow upgrading to different installer types
+        bool ignoreInstalledType = context.Args.Contains(Execution::Args::Type::UninstallPrevious);
+        Manifest::ManifestComparator manifestComparator(GetManifestComparatorOptions(context, isUpgrade ? installedPackage->GetMetadata() : IPackageVersion::Metadata{}, ignoreInstalledType));
         bool versionFound = false;
         bool installedTypeInapplicable = false;
         bool packagePinned = false;

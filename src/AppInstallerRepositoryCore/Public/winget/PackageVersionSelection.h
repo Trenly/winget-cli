@@ -37,7 +37,8 @@ namespace AppInstaller::Repository
     LatestApplicableVersionData GetLatestApplicableVersion(const std::shared_ptr<ICompositePackage>& composite);
 
     // Fills the options from the given metadata, optionally including the allowed architectures.
-    void GetManifestComparatorOptionsFromMetadata(AppInstaller::Manifest::ManifestComparator::Options& options, const IPackageVersion::Metadata& metadata, bool includeAllowedArchitectures = true);
+    // If ignoreInstalledType is true, the CurrentlyInstalledType will not be set from metadata (used for --uninstall-previous).
+    void GetManifestComparatorOptionsFromMetadata(AppInstaller::Manifest::ManifestComparator::Options& options, const IPackageVersion::Metadata& metadata, bool includeAllowedArchitectures = true, bool ignoreInstalledType = false);
 
     // Gets the source priority for a given composite package, taking into account installed relationships.
     std::optional<int32_t> GetSourcePriority(const std::shared_ptr<ICompositePackage>& composite);

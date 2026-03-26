@@ -211,10 +211,10 @@ namespace AppInstaller::Repository
         return result;
     }
 
-    void GetManifestComparatorOptionsFromMetadata(AppInstaller::Manifest::ManifestComparator::Options& options, const IPackageVersion::Metadata& metadata, bool includeAllowedArchitectures)
+    void GetManifestComparatorOptionsFromMetadata(AppInstaller::Manifest::ManifestComparator::Options& options, const IPackageVersion::Metadata& metadata, bool includeAllowedArchitectures, bool ignoreInstalledType)
     {
         auto installedTypeItr = metadata.find(Repository::PackageVersionMetadata::InstalledType);
-        if (installedTypeItr != metadata.end())
+        if (!ignoreInstalledType && installedTypeItr != metadata.end())
         {
             options.CurrentlyInstalledType = Manifest::ConvertToInstallerTypeEnum(installedTypeItr->second);
         }
