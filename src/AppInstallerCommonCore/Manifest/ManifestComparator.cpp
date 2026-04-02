@@ -229,20 +229,34 @@ namespace AppInstaller::Manifest
                     preference = Settings::User().Get<Settings::Setting::InstallerTypePreference>();
                     requirement = Settings::User().Get<Settings::Setting::InstallerTypeRequirement>();
 
-                    // Apply default precedence order when the user has not configured any installer type preferences or requirements.
+                    static const std::vector<InstallerTypeEnum> c_defaultPreference = {
+                        InstallerTypeEnum::MSStore,
+                        InstallerTypeEnum::Msix,
+                        InstallerTypeEnum::Msi,
+                        InstallerTypeEnum::Wix,
+                        InstallerTypeEnum::Burn,
+                        InstallerTypeEnum::Nullsoft,
+                        InstallerTypeEnum::Inno,
+                        InstallerTypeEnum::Exe,
+                        InstallerTypeEnum::Portable,
+                    };
+
                     if (preference.empty() && requirement.empty())
                     {
-                        preference = {
-                            InstallerTypeEnum::MSStore,
-                            InstallerTypeEnum::Msix,
-                            InstallerTypeEnum::Msi,
-                            InstallerTypeEnum::Wix,
-                            InstallerTypeEnum::Burn,
-                            InstallerTypeEnum::Nullsoft,
-                            InstallerTypeEnum::Inno,
-                            InstallerTypeEnum::Exe,
-                            InstallerTypeEnum::Portable,
-                        };
+                        // Apply default precedence order when the user has not configured any installer type preferences or requirements.
+                        preference = c_defaultPreference;
+                    }
+                    else if (!preference.empty() && requirement.empty())
+                    {
+                        // User has preferences but no requirements — append defaults (deduped) so that types
+                        // not mentioned by the user still get a stable ordering rather than falling back to manifest position.
+                        for (const auto& defaultType : c_defaultPreference)
+                        {
+                            if (std::find(preference.begin(), preference.end(), defaultType) == preference.end())
+                            {
+                                preference.emplace_back(defaultType);
+                            }
+                        }
                     }
                 }
 

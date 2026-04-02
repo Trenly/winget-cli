@@ -800,15 +800,19 @@ TEST_CASE("ManifestComparator_InstallerType", "[manifest_comparator]")
         RequireInstaller(result, exe);
         REQUIRE(inapplicabilities.size() == 0);
     }
-    SECTION("Preference does not exist")
+    SECTION("Preference does not exist - defaults appended")
     {
+        // User prefers Portable, but no installer in the manifest is Portable.
+        // The default list is appended after the user list (deduped), so the effective order becomes:
+        // [Portable, MSStore, Msix, Msi, Wix, Burn, Nullsoft, Inno, Exe]
+        // Of the manifest installers (Msi, Exe, Msix), Msix appears first in that combined list.
         TestUserSettings settings;
         settings.Set<Setting::InstallerTypePreference>({ InstallerTypeEnum::Portable });
 
         ManifestComparator mc(GetManifestComparatorOptions(ManifestComparatorTestContext{}, {}));
         auto [result, inapplicabilities] = mc.GetPreferredInstaller(manifest);
 
-        RequireInstaller(result, msi);
+        RequireInstaller(result, msix);
         REQUIRE(inapplicabilities.size() == 0);
     }
     SECTION("Multiple preferences")
@@ -824,6 +828,33 @@ TEST_CASE("ManifestComparator_InstallerType", "[manifest_comparator]")
     }
     SECTION("Multiple preferences alternate order")
     {
+        TestUserSettings settings;
+        settings.Set<Setting::InstallerTypePreference>({ InstallerTypeEnum::Msix, InstallerTypeEnum::Exe });
+
+        ManifestComparator mc(GetManifestComparatorOptions(ManifestComparatorTestContext{}, {}));
+        auto [result, inapplicabilities] = mc.GetPreferredInstaller(manifest);
+
+        RequireInstaller(result, msix);
+        REQUIRE(inapplicabilities.size() == 0);
+    }
+    SECTION("User preference wins over appended defaults")
+    {
+        // User prefers Msi first; even though Msix appears before Msi in the default list,
+        // the user's specified order takes precedence in the combined list.
+        TestUserSettings settings;
+        settings.Set<Setting::InstallerTypePreference>({ InstallerTypeEnum::Msi });
+
+        ManifestComparator mc(GetManifestComparatorOptions(ManifestComparatorTestContext{}, {}));
+        auto [result, inapplicabilities] = mc.GetPreferredInstaller(manifest);
+
+        RequireInstaller(result, msi);
+        REQUIRE(inapplicabilities.size() == 0);
+    }
+    SECTION("User preference overlap with default produces no duplicates")
+    {
+        // User specifies Msix and Exe, both of which also appear in the default list.
+        // The combined list should be [Msix, Exe, MSStore, Msi, Wix, Burn, Nullsoft, Inno, Portable]
+        // — no duplicate Msix or Exe entries — and Msix should win.
         TestUserSettings settings;
         settings.Set<Setting::InstallerTypePreference>({ InstallerTypeEnum::Msix, InstallerTypeEnum::Exe });
 
