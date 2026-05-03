@@ -21,7 +21,7 @@ When a user corrects you on terminology, naming conventions, workflow preference
    Offer both options clearly and let the user decide.
 
 4. **Act on the answer.**
-   - If **repository memory**: add a concise, unambiguous entry under the appropriate section of this file (`copilot-memory.md`) and commit it.
+   - If **repository memory**: add a concise, unambiguous entry under the appropriate section of this file (`copilot-memory.instructions.md`) and commit it.
    - If **user memory**: call the `store_memory` tool with a clear `fact`, a `reason` explaining when it applies, and a `citations` reference to this conversation or the relevant file.
    - If **neither**: acknowledge and move on without storing.
 
