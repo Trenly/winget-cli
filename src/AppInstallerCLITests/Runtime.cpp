@@ -411,6 +411,30 @@ TEST_CASE("VerifyDevModeEnabledCheck", "[runtime]")
     REQUIRE(revertedState == initialState);
 }
 
+TEST_CASE("ReplacePortablePathsWithEnvironmentVariables", "[runtime]")
+{
+    const auto programFilesFolder = Filesystem::GetKnownFolderPath(FOLDERID_ProgramFiles);
+    const auto programFilesX86Folder = Filesystem::GetKnownFolderPath(FOLDERID_ProgramFilesX86);
+
+    std::filesystem::path programFilesPath = programFilesFolder / "Winget" / "Portable";
+    ReplacePortablePathsWithEnvironmentVariables(programFilesPath);
+    REQUIRE(programFilesPath.u8string() == "%ProgramFiles%\\Winget\\Portable");
+
+    std::filesystem::path programFilesX86Path = programFilesX86Folder / "Winget" / "Portable";
+    ReplacePortablePathsWithEnvironmentVariables(programFilesX86Path);
+    const std::string expectedProgramFilesX86Prefix =
+        programFilesX86Folder == programFilesFolder ? "%ProgramFiles%" : "%ProgramFiles(x86)%";
+    REQUIRE(programFilesX86Path.u8string() == (expectedProgramFilesX86Prefix + "\\Winget\\Portable"));
+
+    std::filesystem::path localAppDataPath = Filesystem::GetKnownFolderPath(FOLDERID_LocalAppData) / "Microsoft" / "WinGet";
+    ReplacePortablePathsWithEnvironmentVariables(localAppDataPath);
+    REQUIRE(localAppDataPath.u8string() == "%LOCALAPPDATA%\\Microsoft\\WinGet");
+
+    std::filesystem::path userProfilePath = Filesystem::GetKnownFolderPath(FOLDERID_Profile) / "Tools" / "Portable";
+    ReplacePortablePathsWithEnvironmentVariables(userProfilePath);
+    REQUIRE(userProfilePath.u8string() == "%USERPROFILE%\\Tools\\Portable");
+}
+
 TEST_CASE("EnsureUserProfileNotPresentInDisplayPaths", "[runtime]")
 {
     // Clear the overrides that we use when testing as they don't consider display purposes

@@ -363,15 +363,19 @@ namespace AppInstaller::CLI::Portable
     {
         // Ensure the preferred separator format
         value.make_preferred();
+        auto shortenedValue = value;
+        Runtime::ReplacePortablePathsWithEnvironmentVariables(shortenedValue);
 
-        if (PathVariable(GetScope()).Append(value))
+        auto pathVariable = PathVariable(GetScope());
+
+        if (!pathVariable.Contains(value) && !pathVariable.Contains(shortenedValue) && pathVariable.Append(shortenedValue))
         {
-            AICLI_LOG(Core, Info, << "Appending portable target directory to PATH registry: " << value);
+            AICLI_LOG(Core, Info, << "Appending portable target directory to PATH registry: " << shortenedValue);
             m_stream << Resource::String::ModifiedPathRequiresShellRestart << std::endl;
         }
         else
         {
-            AICLI_LOG(CLI, Info, << "Portable target directory already exists in PATH registry: " << value);
+            AICLI_LOG(CLI, Info, << "Portable target directory already exists in PATH registry: " << shortenedValue);
         }
     }
 
@@ -383,9 +387,16 @@ namespace AppInstaller::CLI::Portable
         }
         else
         {
-			// Attempt to remove both the original and the preferred format to ensure removal
+            auto preferredValue = value;
+            preferredValue.make_preferred();
+            auto shortenedValue = preferredValue;
+            Runtime::ReplacePortablePathsWithEnvironmentVariables(shortenedValue);
+
+            // Attempt to remove both the original and the preferred format to ensure removal
             // Necessary for handling old path values associated with winget-cli#5033
-            if (PathVariable(GetScope()).Remove(value) || PathVariable(GetScope()).Remove(value.make_preferred()))
+            if (PathVariable(GetScope()).Remove(shortenedValue) ||
+                PathVariable(GetScope()).Remove(preferredValue) ||
+                PathVariable(GetScope()).Remove(value))
             {
                 InstallDirectoryAddedToPath = false;
                 AICLI_LOG(CLI, Info, << "Removed target directory from PATH registry: " << value);

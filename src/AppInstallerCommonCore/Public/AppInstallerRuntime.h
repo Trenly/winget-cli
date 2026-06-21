@@ -83,6 +83,9 @@ namespace AppInstaller::Runtime
     // Replaces the substring in the path with the user profile environment variable.
     void ReplaceProfilePathsWithEnvironmentVariable(std::filesystem::path& path);
 
+    // Replaces common portable install path prefixes with environment variables.
+    void ReplacePortablePathsWithEnvironmentVariables(std::filesystem::path& path);
+
     // Gets a new temp file path.
     std::filesystem::path GetNewTempFilePath();
 

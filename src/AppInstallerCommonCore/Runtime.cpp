@@ -48,6 +48,8 @@ namespace AppInstaller::Runtime
 
         constexpr std::string_view s_UserProfileEnvironmentVariable = "%USERPROFILE%";
         constexpr std::string_view s_LocalAppDataEnvironmentVariable = "%LOCALAPPDATA%";
+        constexpr std::string_view s_ProgramFilesEnvironmentVariable = "%ProgramFiles%";
+        constexpr std::string_view s_ProgramFilesX86EnvironmentVariable = "%ProgramFiles(x86)%";
         constexpr std::string_view s_WindowsApps_Base = "Microsoft\\WindowsApps"sv;
         constexpr std::string_view s_WinGetDev_Exe = "wingetdev.exe";
         constexpr std::string_view s_WinGet_Exe = "winget.exe";
@@ -528,6 +530,26 @@ namespace AppInstaller::Runtime
         {
             ReplaceCommonPathPrefix(path, GetKnownFolderPath(FOLDERID_Profile), s_UserProfileEnvironmentVariable);
         }
+    }
+
+    void ReplacePortablePathsWithEnvironmentVariables(std::filesystem::path& path)
+    {
+        if (ReplaceCommonPathPrefix(path, GetKnownFolderPath(FOLDERID_ProgramFiles), s_ProgramFilesEnvironmentVariable))
+        {
+            return;
+        }
+
+        if (ReplaceCommonPathPrefix(path, GetKnownFolderPath(FOLDERID_ProgramFilesX86), s_ProgramFilesX86EnvironmentVariable))
+        {
+            return;
+        }
+
+        if (ReplaceCommonPathPrefix(path, GetKnownFolderPath(FOLDERID_LocalAppData), s_LocalAppDataEnvironmentVariable))
+        {
+            return;
+        }
+
+        ReplaceCommonPathPrefix(path, GetKnownFolderPath(FOLDERID_Profile), s_UserProfileEnvironmentVariable);
     }
 
     std::filesystem::path GetNewTempFilePath()

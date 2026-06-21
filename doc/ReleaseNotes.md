@@ -4,4 +4,4 @@ Nothing yet.
 
 ## Bug Fixes
 
-* None yet
+* Portable PATH entries now use environment variable prefixes (`%ProgramFiles%`, `%ProgramFiles(x86)%`, `%LOCALAPPDATA%`, `%USERPROFILE%`) when applicable to reduce PATH length growth.
