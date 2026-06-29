@@ -24,7 +24,7 @@ namespace AppInstaller::Repository::Rest::Schema
         ~SearchResponseParser();
 
         // Gets the search result for response object
-        IRestClient::SearchResult Deserialize(const web::json::value& searchResultJsonObject) const;
+        IRestClient::SearchResult Deserialize(const Json::Value& searchResultJsonObject) const;
 
     private:
         struct impl;

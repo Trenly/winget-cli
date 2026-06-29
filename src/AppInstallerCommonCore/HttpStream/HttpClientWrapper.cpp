@@ -6,6 +6,7 @@
 #include "HttpClientWrapper.h"
 #include "Public/AppInstallerRuntime.h"
 #include "Public/AppInstallerDownloader.h"
+#include <winget/WebRequest.h>
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Security::Cryptography;
@@ -77,8 +78,9 @@ namespace AppInstaller::Utility::HttpStream
         // Get the extension from the redirect URI
         m_redirectUri = response.RequestMessage().RequestUri();
 
-        m_contentType = response.Content().Headers().HasKey(L"Content-Type") ?
-            response.Content().Headers().Lookup(L"Content-Type")
+        static const std::wstring s_contentTypeHeader{ Utility::Http::Header::ContentType };
+        m_contentType = response.Content().Headers().HasKey(s_contentTypeHeader) ?
+            response.Content().Headers().Lookup(s_contentTypeHeader)
             : L"";
 
         // If the size wasn't resolved try with a GET 0-0 request

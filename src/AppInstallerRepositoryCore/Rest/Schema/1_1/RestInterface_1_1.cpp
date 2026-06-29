@@ -29,7 +29,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_1
         IRestClient::Information information,
         const Http::HttpClientHelper::HttpRequestHeaders& additionalHeaders) : V1_0::Interface(restApi, httpClientHelper), m_information(std::move(information))
     {
-        m_requiredRestApiHeaders[JSON::GetUtilityString(ContractVersion)] = JSON::GetUtilityString(Version_1_1_0.ToString());
+        m_requiredRestApiHeaders[Utility::ConvertToUTF16(ContractVersion)] = Utility::ConvertToUTF16(Version_1_1_0.ToString());
 
         if (!additionalHeaders.empty())
         {
@@ -78,7 +78,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_1
         return result;
     }
 
-    web::json::value Interface::GetValidatedSearchBody(const SearchRequest& searchRequest) const
+    Json::Value Interface::GetValidatedSearchBody(const SearchRequest& searchRequest) const
     {
         SearchRequest resultSearchRequest = searchRequest;
 
@@ -129,7 +129,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_1
         return V1_0::Interface::GetValidatedSearchBody(resultSearchRequest);
     }
 
-    IRestClient::SearchResult Interface::GetSearchResult(const web::json::value& searchResponseObject) const
+    IRestClient::SearchResult Interface::GetSearchResult(const Json::Value& searchResponseObject) const
     {
         IRestClient::SearchResult result = V1_0::Interface::GetSearchResult(searchResponseObject);
 
@@ -148,7 +148,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_1
         return result;
     }
 
-    std::vector<Manifest::Manifest> Interface::GetParsedManifests(const web::json::value& manifestsResponseObject) const
+    std::vector<Manifest::Manifest> Interface::GetParsedManifests(const Json::Value& manifestsResponseObject) const
     {
         auto result = V1_0::Interface::GetParsedManifests(manifestsResponseObject);
 

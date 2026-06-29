@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 #include "pch.h"
 #include "ManifestDeserializer.h"
@@ -20,7 +20,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_28::Json
         constexpr std::string_view Type = "Type"sv;
     }
 
-    std::optional<Manifest::ManifestInstaller> ManifestDeserializer::DeserializeInstaller(const web::json::value& installerJsonObject) const
+    std::optional<Manifest::ManifestInstaller> ManifestDeserializer::DeserializeInstaller(const ::Json::Value& installerJsonObject) const
     {
         auto result = V1_12::Json::ManifestDeserializer::DeserializeInstaller(installerJsonObject);
 
@@ -33,7 +33,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_28::Json
             if (dscNode)
             {
                 const auto& dscObject = dscNode->get();
-                if (!dscObject.is_null() && dscObject.is_object())
+                if (!dscObject.isNull() && dscObject.isObject())
                 {
                     // PowerShell DSC modules
                     auto powerShellNode = JSON::GetRawJsonArrayFromJsonNode(dscObject, JSON::GetUtilityString(PowerShell));
@@ -78,7 +78,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_28::Json
                     if (dscv3Node)
                     {
                         const auto& dscv3Object = dscv3Node->get();
-                        if (!dscv3Object.is_null() && dscv3Object.is_object())
+                        if (!dscv3Object.isNull() && dscv3Object.isObject())
                         {
                             std::vector<DesiredStateConfigurationResourceInfo> resources;
                             auto resourcesNode = JSON::GetRawJsonArrayFromJsonNode(dscv3Object, JSON::GetUtilityString(Resources));

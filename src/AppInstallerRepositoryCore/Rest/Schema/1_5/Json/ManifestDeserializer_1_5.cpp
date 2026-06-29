@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 #include "pch.h"
 #include "ManifestDeserializer.h"
@@ -19,7 +19,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_5::Json
         constexpr std::string_view IconSha256 = "IconSha256"sv;
     }
 
-    std::optional<Manifest::ManifestLocalization> ManifestDeserializer::DeserializeLocale(const web::json::value& localeJsonObject) const
+    std::optional<Manifest::ManifestLocalization> ManifestDeserializer::DeserializeLocale(const ::Json::Value& localeJsonObject) const
     {
         auto result = V1_4::Json::ManifestDeserializer::DeserializeLocale(localeJsonObject);
 

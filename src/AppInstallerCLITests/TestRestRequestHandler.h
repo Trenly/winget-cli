@@ -1,27 +1,32 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 #pragma once
-#include <cpprest/http_client.h>
 
-class TestRestRequestHandler : public web::http::http_pipeline_stage
+#include <winhttp.h>
+#include <winget/WebRequest.h>
+#include <winget/RestHelpers.h>
+
+struct TestRestRequestHandler : public AppInstaller::Rest::IHttpClient
 {
-public:
-    TestRestRequestHandler(const std::function<pplx::task<web::http::http_response>(web::http::http_request request)>& handler) : m_handler(handler) {}
+    using Request = AppInstaller::Rest::Request;
+    using Response = AppInstaller::Rest::Response;
+    using Handler = std::function<Response(const Request&)>;
 
-    virtual pplx::task<web::http::http_response> propagate(web::http::http_request request)
-    {
-        return m_handler(request);
-    }
+    TestRestRequestHandler(Handler handler);
+
+    Response Send(const Request& request) const override;
+    Response Get(const std::wstring& uri, const AppInstaller::Rest::HttpHeaders& headers = {}, const AppInstaller::Rest::HttpHeaders& authHeaders = {}) const override;
+    Response Post(const std::wstring& uri, const ::Json::Value& body, const AppInstaller::Rest::HttpHeaders& headers = {}, const AppInstaller::Rest::HttpHeaders& authHeaders = {}) const override;
 
 private:
-    std::function<pplx::task<web::http::http_response>(web::http::http_request request)> m_handler;
+    Handler m_handler;
 };
 
 std::shared_ptr<TestRestRequestHandler> GetTestRestRequestHandler(
-    const web::http::status_code statusCode, const utility::string_t& sampleResponseString = {}, const utility::string_t& mimeType = web::http::details::mime_types::application_json);
+    const uint32_t statusCode, const std::wstring& sampleResponseString = {}, const std::wstring& mimeType = std::wstring{ AppInstaller::Utility::Http::MimeType::ApplicationJson });
 
 std::shared_ptr<TestRestRequestHandler> GetTestRestRequestHandler(
-    std::function<web::http::status_code(const web::http::http_request& request)> handler);
+    std::function<uint32_t(const AppInstaller::Rest::Request& request)> handler);
 
 std::shared_ptr<TestRestRequestHandler> GetHeaderVerificationHandler(
-    const web::http::status_code statusCode, const utility::string_t& sampleResponseString, const std::pair<utility::string_t, utility::string_t>& header, web::http::status_code statusCodeOnFailure = web::http::status_codes::BadRequest);
+    const uint32_t statusCode, const std::wstring& sampleResponseString, const std::pair<std::wstring, std::wstring>& header, uint32_t statusCodeOnFailure = HTTP_STATUS_BAD_REQUEST);

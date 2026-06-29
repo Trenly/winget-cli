@@ -3,11 +3,17 @@
 #include "pch.h"
 #include "AppInstallerStrings.h"
 #include "winget/Rest.h"
-#include <winget/JsonUtil.h>
+#include <winget/WebRequest.h>
+#include <winhttp.h>
 
 namespace AppInstaller::Rest
 {
-    utility::string_t GetRestAPIBaseUri(std::string uri)
+    bool HasQueryString(const std::wstring& uri)
+    {
+        return uri.find(Utility::Http::Uri::QueryParamMarker) != std::wstring::npos;
+    }
+
+    std::wstring GetRestAPIBaseUri(std::string uri)
     {
         // Trim
         if (!uri.empty())
@@ -21,40 +27,75 @@ namespace AppInstaller::Rest
             }
         }
 
-        // Encode the Uri
-        return web::uri::encode_uri(JSON::GetUtilityString(uri));
+        return Utility::Http::EscapeUri(Utility::ConvertToUTF16(uri));
     }
 
-    bool IsValidUri(const utility::string_t& restApiUri)
+    bool IsValidUri(const std::wstring& restApiUri)
     {
-        return web::uri::validate(restApiUri);
+        if (restApiUri.find_first_of(L" \t\r\n") != std::wstring::npos)
+        {
+            return false;
+        }
+
+        URL_COMPONENTS uriComponents{};
+        uriComponents.dwStructSize = sizeof(uriComponents);
+        uriComponents.dwHostNameLength = static_cast<DWORD>(-1);
+        uriComponents.dwUrlPathLength = static_cast<DWORD>(-1);
+        uriComponents.dwExtraInfoLength = static_cast<DWORD>(-1);
+        return WinHttpCrackUrl(restApiUri.c_str(), 0, 0, &uriComponents) != FALSE;
     }
 
-    utility::string_t AppendPathToUri(const utility::string_t& restApiUri, const utility::string_t& path)
+    std::wstring AppendPathToUri(const std::wstring& restApiUri, const std::wstring& path)
     {
-        web::uri_builder builder(restApiUri);
-        builder.append_path(path, true);
-        return builder.to_string();
+        std::wstring result = restApiUri;
+
+        if (result.empty() || result.back() != Utility::Http::Uri::PathDelimiter)
+        {
+            result += Utility::Http::Uri::PathDelimiter;
+        }
+
+        std::wstring cleanPath = path;
+        while (!cleanPath.empty() && cleanPath.front() == Utility::Http::Uri::PathDelimiter)
+        {
+            cleanPath.erase(cleanPath.begin());
+        }
+
+        return result + Utility::Http::EncodeUriComponent(cleanPath);
     }
 
-    utility::string_t MakeQueryParam(std::string_view queryName, const std::string& queryValue)
+    std::wstring MakeQueryParam(std::string_view queryName, const std::string& queryValue)
     {
         std::string queryParam;
         queryParam.append(queryName).append("=").append(queryValue);
 
-        return utility::conversions::to_string_t(queryParam);
+        return Utility::ConvertToUTF16(queryParam);
     }
 
-    utility::string_t AppendQueryParamsToUri(const utility::string_t& uri, const std::map<std::string_view, std::string>& queryParameters)
+    std::wstring AppendQueryParamsToUri(const std::wstring& uri, const std::map<std::string_view, std::string>& queryParameters)
     {
-        web::http::uri_builder builder{ uri };
-
-        for (auto& pair : queryParameters)
+        if (queryParameters.empty())
         {
-            builder.append_query(MakeQueryParam(pair.first, pair.second), true);
+            return uri;
         }
 
-        return builder.to_string();
+        std::wstring result = uri;
+        result += HasQueryString(uri) ? Utility::Http::Uri::QueryParamDelimiter : Utility::Http::Uri::QueryParamMarker;
+
+        bool first = true;
+        for (const auto& pair : queryParameters)
+        {
+            if (!first)
+            {
+                result += Utility::Http::Uri::QueryParamDelimiter;
+            }
+
+            std::wstring queryName = Utility::Http::EncodeUriComponent(Utility::ConvertToUTF16(std::string{ pair.first }));
+            std::wstring queryValue = Utility::Http::EncodeUriComponent(Utility::ConvertToUTF16(pair.second));
+            result += queryName + L'=' + queryValue;
+            first = false;
+        }
+
+        return result;
     }
 
     std::vector<std::string> GetUniqueItems(const std::vector<std::string>& list)

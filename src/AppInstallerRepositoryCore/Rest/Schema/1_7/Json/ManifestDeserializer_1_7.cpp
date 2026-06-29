@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 #include "pch.h"
 #include "ManifestDeserializer.h"
@@ -15,7 +15,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_7::Json
         constexpr std::string_view RepairBehavior = "RepairBehavior"sv;
     }
 
-    std::optional<Manifest::ManifestInstaller> ManifestDeserializer::DeserializeInstaller(const web::json::value& installerJsonObject) const
+    std::optional<Manifest::ManifestInstaller> ManifestDeserializer::DeserializeInstaller(const ::Json::Value& installerJsonObject) const
     {
         auto result = V1_6::Json::ManifestDeserializer::DeserializeInstaller(installerJsonObject);
 
@@ -29,7 +29,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_7::Json
         return result;
     }
 
-    std::map<Manifest::InstallerSwitchType, Manifest::string_t> ManifestDeserializer::DeserializeInstallerSwitches(const web::json::value& installerSwitchesJsonObject) const
+    std::map<Manifest::InstallerSwitchType, Manifest::string_t> ManifestDeserializer::DeserializeInstallerSwitches(const ::Json::Value& installerSwitchesJsonObject) const
     {
         auto installerSwitches = V1_6::Json::ManifestDeserializer::DeserializeInstallerSwitches(installerSwitchesJsonObject);
 

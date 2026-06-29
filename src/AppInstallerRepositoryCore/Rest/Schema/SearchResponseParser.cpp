@@ -42,7 +42,7 @@ namespace AppInstaller::Repository::Rest::Schema
         }
     }
 
-    IRestClient::SearchResult SearchResponseParser::Deserialize(const web::json::value& searchResultJsonObject) const
+    IRestClient::SearchResult SearchResponseParser::Deserialize(const Json::Value& searchResultJsonObject) const
     {
         return m_pImpl->m_deserializer->Deserialize(searchResultJsonObject);
     }

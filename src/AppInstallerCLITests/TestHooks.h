@@ -100,11 +100,11 @@ namespace AppInstaller
 
     namespace MSStore::TestHooks
     {
-        void SetDisplayCatalogHttpPipelineStage_Override(std::shared_ptr<web::http::http_pipeline_stage> value);
+        void SetDisplayCatalogHttpPipelineStage_Override(std::shared_ptr<Rest::IHttpClient> value);
 
         void SetSfsClientAppContents_Override(std::function<std::vector<SFS::AppContent>(std::string_view)>* value);
 
-        void SetLicensingHttpPipelineStage_Override(std::shared_ptr<web::http::http_pipeline_stage> value);
+        void SetLicensingHttpPipelineStage_Override(std::shared_ptr<Rest::IHttpClient> value);
 
         void TestHook_SetProvisionAfterInstall(bool* value);
     }
@@ -287,7 +287,7 @@ namespace TestHook
 
     struct SetDisplayCatalogHttpPipelineStage_Override
     {
-        SetDisplayCatalogHttpPipelineStage_Override(std::shared_ptr<web::http::http_pipeline_stage> value)
+        SetDisplayCatalogHttpPipelineStage_Override(std::shared_ptr<AppInstaller::Rest::IHttpClient> value)
         {
             AppInstaller::MSStore::TestHooks::SetDisplayCatalogHttpPipelineStage_Override(value);
         }
@@ -316,7 +316,7 @@ namespace TestHook
 
     struct SetLicensingHttpPipelineStage_Override
     {
-        SetLicensingHttpPipelineStage_Override(std::shared_ptr<web::http::http_pipeline_stage> value)
+        SetLicensingHttpPipelineStage_Override(std::shared_ptr<AppInstaller::Rest::IHttpClient> value)
         {
             AppInstaller::MSStore::TestHooks::SetLicensingHttpPipelineStage_Override(value);
         }

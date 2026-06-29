@@ -2,54 +2,50 @@
 // Licensed under the MIT License.
 #pragma once
 #include <winget/Certificates.h>
+#include <winget/RestHelpers.h>
 #include <winget/SharedThreadGlobals.h>
-#include <cpprest/http_client.h>
-#include <cpprest/json.h>
+#include <json/json.h>
+#include <functional>
 #include <memory>
 #include <optional>
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace AppInstaller::Http
 {
     struct HttpClientHelper
     {
-        using HttpRequestHeaders = std::unordered_map<utility::string_t, utility::string_t>;
+        using HttpRequestHeaders = std::unordered_map<std::wstring, std::wstring>;
 
         struct HttpResponseHandlerResult
         {
             // The custom response handler result. Default is empty.
-            std::optional<web::json::value> Result = std::nullopt;
+            std::optional<::Json::Value> Result = std::nullopt;
 
             // Indicates whether to use default handling logic by HttpClientHelper instead (i.e. the custom response handler does not handle the specific response).
             bool UseDefaultHandling = false;
         };
 
-        using HttpResponseHandler = std::function<HttpResponseHandlerResult(const web::http::http_response&)>;
+        using HttpResponseHandler = std::function<HttpResponseHandlerResult(const Rest::Response&)>;
 
-        HttpClientHelper(std::shared_ptr<web::http::http_pipeline_stage> = {});
+        HttpClientHelper();
+        HttpClientHelper(std::shared_ptr<Rest::IHttpClient> restHttpClient);
 
-        pplx::task<web::http::http_response> Post(const utility::string_t& uri, const web::json::value& body, const HttpRequestHeaders& headers = {}, const HttpRequestHeaders& authHeaders = {}) const;
+        Rest::Response Post(const std::wstring& uri, const ::Json::Value& body, const HttpRequestHeaders& headers = {}, const HttpRequestHeaders& authHeaders = {}) const;
 
-        std::optional<web::json::value> HandlePost(const utility::string_t& uri, const web::json::value& body, const HttpRequestHeaders& headers = {}, const HttpRequestHeaders& authHeaders = {}, const HttpResponseHandler& customHandler = {}) const;
+        std::optional<::Json::Value> HandlePost(const std::wstring& uri, const ::Json::Value& body, const HttpRequestHeaders& headers = {}, const HttpRequestHeaders& authHeaders = {}, const HttpResponseHandler& customHandler = {}) const;
 
-        pplx::task<web::http::http_response> Get(const utility::string_t& uri, const HttpRequestHeaders& headers = {}, const HttpRequestHeaders& authHeaders = {}) const;
+        Rest::Response Get(const std::wstring& uri, const HttpRequestHeaders& headers = {}, const HttpRequestHeaders& authHeaders = {}) const;
 
-        std::optional<web::json::value> HandleGet(const utility::string_t& uri, const HttpRequestHeaders& headers = {}, const HttpRequestHeaders& authHeaders = {}, const HttpResponseHandler& customHandler = {}) const;
+        std::optional<::Json::Value> HandleGet(const std::wstring& uri, const HttpRequestHeaders& headers = {}, const HttpRequestHeaders& authHeaders = {}, const HttpResponseHandler& customHandler = {}) const;
 
         void SetPinningConfiguration(const Certificates::PinningConfiguration& configuration, std::shared_ptr<ThreadLocalStorage::ThreadGlobals> threadGlobals = {});
 
     protected:
-        std::optional<web::json::value> ValidateAndExtractResponse(const web::http::http_response& response) const;
-
-        std::optional<web::json::value> ExtractJsonResponse(const web::http::http_response& response) const;
+        std::optional<::Json::Value> ValidateAndExtractResponse(const Rest::Response& response) const;
 
     private:
-        web::http::client::http_client GetClient(const utility::string_t& uri) const;
-
-        // Translates a cpprestsdk http_exception to a WIL exception.
-        static void RethrowAsWilException(const web::http::http_exception& exception);
-
-        std::shared_ptr<web::http::http_pipeline_stage> m_defaultRequestHandlerStage;
-        web::http::client::http_client_config m_clientConfig;
+        std::shared_ptr<Rest::IHttpClient> m_restHttpClient;
     };
 }

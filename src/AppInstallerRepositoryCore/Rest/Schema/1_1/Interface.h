@@ -24,10 +24,10 @@ namespace AppInstaller::Repository::Rest::Schema::V1_1
         std::map<std::string_view, std::string> GetValidatedQueryParams(const std::map<std::string_view, std::string>& params) const override;
 
         // Check search request against source information and get json search body.
-        web::json::value GetValidatedSearchBody(const SearchRequest& searchRequest) const override;
+        Json::Value GetValidatedSearchBody(const SearchRequest& searchRequest) const override;
 
-        SearchResult GetSearchResult(const web::json::value& searchResponseObject) const override;
-        std::vector<Manifest::Manifest> GetParsedManifests(const web::json::value& manifestsResponseObject) const override;
+        SearchResult GetSearchResult(const Json::Value& searchResponseObject) const override;
+        std::vector<Manifest::Manifest> GetParsedManifests(const Json::Value& manifestsResponseObject) const override;
 
         PackageMatchField ConvertStringToPackageMatchField(std::string_view field) const;
 

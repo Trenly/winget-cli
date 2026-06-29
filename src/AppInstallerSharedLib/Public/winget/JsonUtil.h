@@ -3,16 +3,8 @@
 #pragma once
 #include <json/json.h>
 
-// Disable dllimport for cpprest JSON in any downstream consumers
-#ifndef _NO_ASYNCRTIMP
-#define _NO_ASYNCRTIMP
-#endif
-
-#ifndef WINGET_DISABLE_FOR_FUZZING
-#include <cpprest/json.h>
-#endif
-
 #include <optional>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -34,43 +26,41 @@ namespace AppInstaller::JSON
     template<>
     std::optional<std::vector<std::string>> GetValue<std::vector<std::string>>(const Json::Value& node);
 
-#ifndef WINGET_DISABLE_FOR_FUZZING
-    // For cpprestsdk JSON
-    std::optional<std::reference_wrapper<const web::json::value>> GetJsonValueFromNode(const web::json::value& node, const utility::string_t& keyName);
+    std::optional<std::reference_wrapper<const Json::Value>> GetJsonValueFromNode(const Json::Value& node, std::string_view keyName);
+    std::optional<std::reference_wrapper<const Json::Value>> GetJsonValueFromNode(const Json::Value& node, std::wstring_view keyName);
 
-    std::optional<std::string> GetRawStringValueFromJsonValue(const web::json::value& value);
-    std::optional<std::wstring> GetWideStringValueFromJsonValue(const web::json::value& value);
+    std::optional<std::string> GetRawStringValueFromJsonValue(const Json::Value& value);
+    std::optional<std::string> GetRawStringValueFromJsonNode(const Json::Value& node, std::string_view keyName);
+    std::optional<std::string> GetRawStringValueFromJsonNode(const Json::Value& node, std::wstring_view keyName);
 
-    std::optional<std::string> GetRawStringValueFromJsonNode(const web::json::value& node, const utility::string_t& keyName);
-    std::optional<std::wstring> GetWideStringValueFromJsonNode(const web::json::value& node, const utility::string_t& keyName);
+    std::optional<bool> GetRawBoolValueFromJsonValue(const Json::Value& value);
+    std::optional<bool> GetRawBoolValueFromJsonNode(const Json::Value& node, std::string_view keyName);
+    std::optional<bool> GetRawBoolValueFromJsonNode(const Json::Value& node, std::wstring_view keyName);
 
-    std::optional<bool> GetRawBoolValueFromJsonValue(const web::json::value& value);
+    std::optional<int> GetRawIntValueFromJsonValue(const Json::Value& value);
+    std::optional<int> GetRawIntValueFromJsonNode(const Json::Value& node, std::string_view keyName);
+    std::optional<int> GetRawIntValueFromJsonNode(const Json::Value& node, std::wstring_view keyName);
 
-    std::optional<bool> GetRawBoolValueFromJsonNode(const web::json::value& node, const utility::string_t& keyName);
+    std::optional<uint64_t> GetRawUInt64ValueFromJsonValue(const Json::Value& value);
+    std::optional<uint64_t> GetRawUInt64ValueFromJsonNode(const Json::Value& node, std::string_view keyName);
+    std::optional<uint64_t> GetRawUInt64ValueFromJsonNode(const Json::Value& node, std::wstring_view keyName);
 
-    std::optional<std::reference_wrapper<const web::json::array>> GetRawJsonArrayFromJsonNode(const web::json::value& node, const utility::string_t& keyName);
+    std::optional<std::reference_wrapper<const Json::Value>> GetRawJsonArrayFromJsonNode(const Json::Value& node, std::string_view keyName);
+    std::optional<std::reference_wrapper<const Json::Value>> GetRawJsonArrayFromJsonNode(const Json::Value& node, std::wstring_view keyName);
 
-    std::vector<std::string> GetRawStringArrayFromJsonNode(const web::json::value& node, const utility::string_t& keyName);
-    std::set<std::string> GetRawStringSetFromJsonNode(const web::json::value& node, const utility::string_t& keyName);
+    std::vector<std::string> GetRawStringArrayFromJsonNode(const Json::Value& node, std::string_view keyName);
+    std::vector<std::string> GetRawStringArrayFromJsonNode(const Json::Value& node, std::wstring_view keyName);
+    std::set<std::string> GetRawStringSetFromJsonNode(const Json::Value& node, std::string_view keyName);
+    std::set<std::string> GetRawStringSetFromJsonNode(const Json::Value& node, std::wstring_view keyName);
 
-    std::optional<int> GetRawIntValueFromJsonValue(const web::json::value& value);
-
-    std::optional<uint64_t> GetRawUInt64ValueFromJsonValue(const web::json::value& value);
-
-    std::optional<int> GetRawIntValueFromJsonNode(const web::json::value& node, const utility::string_t& keyName);
-
-    std::optional<uint64_t> GetRawUInt64ValueFromJsonNode(const web::json::value& node, const utility::string_t& keyName);
-
-    utility::string_t GetUtilityString(std::string_view nodeName);
-
-    web::json::value GetStringValue(std::string_view value);
+    std::wstring GetUtilityString(std::string_view nodeName);
+    Json::Value GetStringValue(std::string_view value);
 
     // Base64 encode
     std::string Base64Encode(const std::vector<BYTE>& input);
 
     // Base64 decode
     std::vector<BYTE> Base64Decode(const std::string& input);
-#endif
 
     bool IsValidNonEmptyStringValue(std::optional<std::string>& value);
     bool IsValidNonEmptyStringValue(std::optional<std::wstring>& value);

@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 #pragma once
-#include <cpprest/json.h>
 #include "Rest/Schema/1_0/Json/SearchRequestSerializer.h"
 
 namespace AppInstaller::Repository::Rest::Schema::V1_1::Json

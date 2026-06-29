@@ -32,10 +32,10 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0
         virtual std::map<std::string_view, std::string> GetValidatedQueryParams(const std::map<std::string_view, std::string>& params) const;
 
         // Check search request against source information and get json search body.
-        virtual web::json::value GetValidatedSearchBody(const SearchRequest& searchRequest) const;
+        virtual Json::Value GetValidatedSearchBody(const SearchRequest& searchRequest) const;
 
-        virtual SearchResult GetSearchResult(const web::json::value& searchResponseObject) const;
-        virtual std::vector<Manifest::Manifest> GetParsedManifests(const web::json::value& manifestsResponseObject) const;
+        virtual SearchResult GetSearchResult(const Json::Value& searchResponseObject) const;
+        virtual std::vector<Manifest::Manifest> GetParsedManifests(const Json::Value& manifestsResponseObject) const;
 
         // Gets auth headers if source requires authentication for access.
         virtual Http::HttpClientHelper::HttpRequestHeaders GetAuthHeaders() const;
@@ -44,7 +44,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0
 
     private:
         std::string m_restApiUri;
-        utility::string_t m_searchEndpoint;
+        std::wstring m_searchEndpoint;
         Http::HttpClientHelper m_httpClientHelper;
     };
 }

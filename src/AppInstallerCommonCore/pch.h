@@ -61,15 +61,6 @@
 #include <vector>
 #include <variant>
 
-#ifndef WINGET_DISABLE_FOR_FUZZING
-#pragma warning( push )
-#pragma warning ( disable : 26495 26439 )
-#include <cpprest/http_client.h>
-#include <cpprest/json.h>
-#include <cpprest/uri_builder.h>
-#pragma warning( pop )
-#endif
-
 #pragma warning( push )
 #pragma warning ( disable : 6001 6285 6287 6340 6387 6388 26451 26495 28196 )
 #include <wil/resource.h>

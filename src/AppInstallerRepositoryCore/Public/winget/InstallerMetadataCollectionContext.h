@@ -4,11 +4,11 @@
 
 #include <AppInstallerVersions.h>
 #include <winget/Manifest.h>
-#include <winget/JsonUtil.h>
 #include <winget/ThreadGlobals.h>
 #include <winget/ARPCorrelation.h>
 #include <winget/InstalledFilesCorrelation.h>
 #include <winget/IconExtraction.h>
+#include <json/json.h>
 
 #include <filesystem>
 #include <map>
@@ -29,10 +29,10 @@ namespace AppInstaller::Repository::Metadata
         void Clear();
 
         // Load the metadata from an existing JSON blob.
-        void FromJson(const web::json::value& json);
+        void FromJson(const Json::Value& json);
 
         // Create a JSON value for the metadata using the given schema version.
-        web::json::value ToJson(const Utility::Version& schemaVersion, size_t maximumSizeInBytes);
+        Json::Value ToJson(const Utility::Version& schemaVersion, size_t maximumSizeInBytes);
 
         // Copies the metadata from the source. If the given submission identifier does not match
         // the source, it's data is moved to historical.
@@ -81,8 +81,8 @@ namespace AppInstaller::Repository::Metadata
         std::vector<HistoricalMetadata> HistoricalMetadataList;
 
     private:
-        void FromJson_1_N(const web::json::value& json);
-        web::json::value ToJson_1_N();
+        void FromJson_1_N(const Json::Value& json);
+        Json::Value ToJson_1_N();
 
         // Removes the historical data with the oldest version.
         // Returns true if something was removed; false it not.
@@ -132,10 +132,10 @@ namespace AppInstaller::Repository::Metadata
         void CompleteWithThreadGlobalsSet(std::ostream& output);
 
         // Parse version 1.0 of input JSON
-        void ParseInputJson_1_0(web::json::value& input);
+        void ParseInputJson_1_0(Json::Value& input);
 
         // Create version 1.0 of output JSON
-        web::json::value CreateOutputJson_1_0();
+        Json::Value CreateOutputJson_1_0();
 
         // Determines whether an error has occurred in the context.
         bool ContainsError() const;
@@ -144,10 +144,10 @@ namespace AppInstaller::Repository::Metadata
         void CollectErrorDataFromException(std::exception_ptr exception);
 
         // Create version 1.0 of error JSON
-        web::json::value CreateErrorJson_1_0();
+        Json::Value CreateErrorJson_1_0();
 
         // Merge using merge input version 1.0
-        static web::json::value Merge_1_0(web::json::value& input, size_t maximumSizeInBytes);
+        static Json::Value Merge_1_0(Json::Value& input, size_t maximumSizeInBytes);
 
         ThreadLocalStorage::WingetThreadGlobals m_threadGlobals;
 
@@ -155,7 +155,7 @@ namespace AppInstaller::Repository::Metadata
         Utility::Version m_inputVersion;
         Utility::Version m_supportedMetadataVersion;
         ProductMetadata m_currentMetadata;
-        web::json::value m_submissionData;
+        Json::Value m_submissionData;
         std::string m_submissionIdentifier;
         std::string m_installerHash;
         Manifest::Manifest m_incomingManifest;
@@ -174,11 +174,11 @@ namespace AppInstaller::Repository::Metadata
         };
 
         // Convert status to a JSON string value
-        static utility::string_t ToString(OutputStatus status);
+        static std::wstring ToString(OutputStatus status);
 
         OutputStatus m_outputStatus = OutputStatus::Unknown;
         ProductMetadata m_outputMetadata;
-        web::json::value m_outputDiagnostics;
+        Json::Value m_outputDiagnostics;
 
         // Error data storage
         HRESULT m_errorHR = S_OK;

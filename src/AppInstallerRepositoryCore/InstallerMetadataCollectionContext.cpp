@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 #include "pch.h"
 #include "winget/InstallerMetadataCollectionContext.h"
@@ -11,6 +11,7 @@
 #include <AppInstallerStrings.h>
 #include <winget/JsonUtil.h>
 #include <winget/ManifestJSONParser.h>
+#include <winget/RestHelpers.h>
 
 using namespace AppInstaller::Utility;
 
@@ -51,88 +52,88 @@ namespace AppInstaller::Repository::Metadata
                 }
             }
 
-            utility::string_t SchemaVersion = L"1.0";
+            std::wstring SchemaVersion = L"1.0";
 
             // 1.0
-            utility::string_t ProductVersionMin = L"productVersionMin";
-            utility::string_t ProductVersionMax = L"productVersionMax";
-            utility::string_t Metadata = L"metadata";
-            utility::string_t InstallerHash = L"installerHash";
-            utility::string_t SubmissionIdentifier = L"submissionIdentifier";
-            utility::string_t Version = L"version";
-            utility::string_t AppsAndFeaturesEntries = L"AppsAndFeaturesEntries";
-            utility::string_t Historical = L"historical";
+            std::wstring ProductVersionMin = L"productVersionMin";
+            std::wstring ProductVersionMax = L"productVersionMax";
+            std::wstring Metadata = L"metadata";
+            std::wstring InstallerHash = L"installerHash";
+            std::wstring SubmissionIdentifier = L"submissionIdentifier";
+            std::wstring Version = L"version";
+            std::wstring AppsAndFeaturesEntries = L"AppsAndFeaturesEntries";
+            std::wstring Historical = L"historical";
 
             // AppsAndFeaturesEntry fields.
-            utility::string_t DisplayName = L"DisplayName";
-            utility::string_t Publisher = L"Publisher";
-            utility::string_t DisplayVersion = L"DisplayVersion";
-            utility::string_t ProductCode = L"ProductCode";
-            utility::string_t UpgradeCode = L"UpgradeCode";
-            utility::string_t InstallerType = L"InstallerType";
+            std::wstring DisplayName = L"DisplayName";
+            std::wstring Publisher = L"Publisher";
+            std::wstring DisplayVersion = L"DisplayVersion";
+            std::wstring ProductCode = L"ProductCode";
+            std::wstring UpgradeCode = L"UpgradeCode";
+            std::wstring InstallerType = L"InstallerType";
 
-            utility::string_t VersionMin = L"versionMin";
-            utility::string_t VersionMax = L"versionMax";
-            utility::string_t Names = L"names";
-            utility::string_t Publishers = L"publishers";
-            utility::string_t ProductCodes = L"productCodes";
-            utility::string_t UpgradeCodes = L"upgradeCodes";
+            std::wstring VersionMin = L"versionMin";
+            std::wstring VersionMax = L"versionMax";
+            std::wstring Names = L"names";
+            std::wstring Publishers = L"publishers";
+            std::wstring ProductCodes = L"productCodes";
+            std::wstring UpgradeCodes = L"upgradeCodes";
 
             // 1.1
-            utility::string_t Scope;
+            std::wstring Scope;
 
             // 1.2
 
             // Installed files
-            utility::string_t InstalledFiles;
-            utility::string_t DefaultInstallLocation;
-            utility::string_t InstallationMetadataFiles;
-            utility::string_t InstalledFileRelativeFilePath;
-            utility::string_t InstalledFileSha256;
-            utility::string_t InstalledFileType;
-            utility::string_t InstalledFileInvocationParameter;
-            utility::string_t InstalledFileDisplayName;
+            std::wstring InstalledFiles;
+            std::wstring DefaultInstallLocation;
+            std::wstring InstallationMetadataFiles;
+            std::wstring InstalledFileRelativeFilePath;
+            std::wstring InstalledFileSha256;
+            std::wstring InstalledFileType;
+            std::wstring InstalledFileInvocationParameter;
+            std::wstring InstalledFileDisplayName;
             // Startup links
-            utility::string_t InstalledStartupLinks;
-            utility::string_t InstalledStartupLinkPath;
-            utility::string_t InstalledStartupLinkType;
+            std::wstring InstalledStartupLinks;
+            std::wstring InstalledStartupLinkPath;
+            std::wstring InstalledStartupLinkType;
             // Icons
-            utility::string_t Icons;
-            utility::string_t IconContent;
-            utility::string_t IconSha256;
-            utility::string_t IconFileType;
-            utility::string_t IconResolution;
-            utility::string_t IconTheme;
+            std::wstring Icons;
+            std::wstring IconContent;
+            std::wstring IconSha256;
+            std::wstring IconFileType;
+            std::wstring IconResolution;
+            std::wstring IconTheme;
         };
 
         struct OutputFields_1_0
         {
-            utility::string_t Version = L"version";
-            utility::string_t SubmissionData = L"submissionData";
-            utility::string_t InstallerHash = L"installerHash";
-            utility::string_t Status = L"status";
-            utility::string_t Metadata = L"metadata";
-            utility::string_t Diagnostics = L"diagnostics";
+            std::wstring Version = L"version";
+            std::wstring SubmissionData = L"submissionData";
+            std::wstring InstallerHash = L"installerHash";
+            std::wstring Status = L"status";
+            std::wstring Metadata = L"metadata";
+            std::wstring Diagnostics = L"diagnostics";
         };
         
         struct DiagnosticFields
         {
             // Error case
-            utility::string_t ErrorHR = L"errorHR";
-            utility::string_t ErrorText = L"errorText";
+            std::wstring ErrorHR = L"errorHR";
+            std::wstring ErrorText = L"errorText";
 
             // Non-error case
-            utility::string_t Reason = L"reason";
-            utility::string_t ChangedEntryCount = L"changedEntryCount";
-            utility::string_t MatchedEntryCount = L"matchedEntryCount";
-            utility::string_t IntersectionCount = L"intersectionCount";
-            utility::string_t CorrelationMeasures = L"correlationMeasures";
-            utility::string_t Value = L"value";
-            utility::string_t Name = L"name";
-            utility::string_t Publisher = L"publisher";
+            std::wstring Reason = L"reason";
+            std::wstring ChangedEntryCount = L"changedEntryCount";
+            std::wstring MatchedEntryCount = L"matchedEntryCount";
+            std::wstring IntersectionCount = L"intersectionCount";
+            std::wstring CorrelationMeasures = L"correlationMeasures";
+            std::wstring Value = L"value";
+            std::wstring Name = L"name";
+            std::wstring Publisher = L"publisher";
         };
 
-        std::string GetRequiredString(const web::json::value& value, const utility::string_t& field)
+        std::string GetRequiredString(const Json::Value& value, const std::wstring& field)
         {
             auto optString = AppInstaller::JSON::GetRawStringValueFromJsonNode(value, field);
             if (!optString)
@@ -143,22 +144,22 @@ namespace AppInstaller::Repository::Metadata
             return std::move(optString).value();
         }
 
-        void AddFieldIfNotEmpty(web::json::value& value, const utility::string_t& field, std::string_view string)
+        void AddFieldIfNotEmpty(Json::Value& value, const std::wstring& field, std::string_view string)
         {
             if (!string.empty())
             {
-                value[field] = AppInstaller::JSON::GetStringValue(string);
+                value[Utility::ConvertToUTF8(field)] = std::string{ string };
             }
         }
 
-        web::json::value CreateStringArray(const std::set<std::string>& values)
+        Json::Value CreateStringArray(const std::set<std::string>& values)
         {
-            web::json::value result;
-            size_t index = 0;
+            Json::Value result{ Json::arrayValue };
+            Json::ArrayIndex index = 0;
 
             for (const std::string& value : values)
             {
-                result[index++] = AppInstaller::JSON::GetStringValue(value);
+                result[index++] = value;
             }
 
             return result;
@@ -218,7 +219,7 @@ namespace AppInstaller::Repository::Metadata
             }
         }
 
-        std::optional<std::string> GetStringFromFutureSchema(const web::json::value& value, const utility::string_t& field)
+        std::optional<std::string> GetStringFromFutureSchema(const Json::Value& value, const std::wstring& field)
         {
             if (field.empty())
             {
@@ -228,11 +229,11 @@ namespace AppInstaller::Repository::Metadata
             return AppInstaller::JSON::GetRawStringValueFromJsonNode(value, field);
         }
 
-        void SetStringFromFutureSchema(web::json::value& json, const utility::string_t& field, std::string_view value)
+        void SetStringFromFutureSchema(Json::Value& json, const std::wstring& field, std::string_view value)
         {
             if (!field.empty())
             {
-                json[field] = AppInstaller::JSON::GetStringValue(value);
+                json[Utility::ConvertToUTF8(field)] = std::string{ value };
             }
         }
 
@@ -306,16 +307,16 @@ namespace AppInstaller::Repository::Metadata
         // TODO: This method could be moved to rest response parser and reused when winget supports launch
         // scenarios (i.e. when startup links info are exposed in winget manifest).
         std::optional<std::vector<Correlation::InstalledStartupLinkFile>> DeserializeInstalledStartupLinks(
-            const web::json::value& startupLinkFiles,
+            const Json::Value& startupLinkFiles,
             const ProductMetadataFields_1_N& fields)
         {
-            if (startupLinkFiles.is_null() || !startupLinkFiles.is_array())
+            if (startupLinkFiles.isNull() || !startupLinkFiles.isArray())
             {
                 return {};
             }
 
             std::vector<Correlation::InstalledStartupLinkFile> startupLinks;
-            for (auto const& startupLink : startupLinkFiles.as_array())
+            for (auto const& startupLink : startupLinkFiles)
             {
                 Correlation::InstalledStartupLinkFile fileEntry;
 
@@ -341,16 +342,16 @@ namespace AppInstaller::Repository::Metadata
         }
 
         std::vector<ExtractedIconInfo> DeserializeExtractedIcons(
-            const web::json::value& icons,
+            const Json::Value& icons,
             const ProductMetadataFields_1_N& fields)
         {
-            if (icons.is_null() || !icons.is_array())
+            if (icons.isNull() || !icons.isArray())
             {
                 return {};
             }
 
             std::vector<ExtractedIconInfo> result;
-            for (auto const& iconInfo : icons.as_array())
+            for (auto const& iconInfo : icons)
             {
                 ExtractedIconInfo iconInfoEntry;
 
@@ -403,13 +404,13 @@ namespace AppInstaller::Repository::Metadata
         HistoricalMetadataList.clear();
     }
 
-    void ProductMetadata::FromJson(const web::json::value& json)
+    void ProductMetadata::FromJson(const Json::Value& json)
     {
         Clear();
 
-        utility::string_t versionFieldName = L"version";
+        std::wstring versionFieldName = L"version";
 
-        THROW_HR_IF(APPINSTALLER_CLI_ERROR_JSON_INVALID_FILE, json.is_null());
+        THROW_HR_IF(APPINSTALLER_CLI_ERROR_JSON_INVALID_FILE, json.isNull());
 
         SchemaVersion = Version{ GetRequiredString(json, versionFieldName) };
         AICLI_LOG(Repo, Info, << "Parsing metadata JSON version " << SchemaVersion.ToString());
@@ -431,12 +432,12 @@ namespace AppInstaller::Repository::Metadata
             });
     }
 
-    web::json::value ProductMetadata::ToJson(const Utility::Version& schemaVersion, size_t maximumSizeInBytes)
+    Json::Value ProductMetadata::ToJson(const Utility::Version& schemaVersion, size_t maximumSizeInBytes)
     {
         SchemaVersion = schemaVersion;
         AICLI_LOG(Repo, Info, << "Creating metadata JSON version " << SchemaVersion.ToString());
 
-        using ToJsonFunctionPointer = web::json::value(ProductMetadata::*)();
+        using ToJsonFunctionPointer = Json::Value(ProductMetadata::*)();
         ToJsonFunctionPointer toJsonFunction = nullptr;
 
         if (SchemaVersion.PartAt(0).Integer == 1)
@@ -450,15 +451,12 @@ namespace AppInstaller::Repository::Metadata
         }
 
         // Constrain the result based on maximum size given
-        web::json::value result = (this->*toJsonFunction)();
+        Json::Value result = (this->*toJsonFunction)();
 
         while (maximumSizeInBytes)
         {
             // Determine current size
-            std::ostringstream temp;
-            result.serialize(temp);
-
-            std::string tempStr = temp.str();
+            std::string tempStr = Rest::Json::Serialize(result);
             if (tempStr.length() > maximumSizeInBytes)
             {
                 if (!DropOldestHistoricalData())
@@ -532,7 +530,7 @@ namespace AppInstaller::Repository::Metadata
         }
     }
 
-    void ProductMetadata::FromJson_1_N(const web::json::value& json)
+    void ProductMetadata::FromJson_1_N(const Json::Value& json)
     {
         AICLI_LOG(Repo, Info, << "Parsing metadata JSON " << SchemaVersion.ToString() << " fields");
 
@@ -579,7 +577,7 @@ namespace AppInstaller::Repository::Metadata
 
                 auto appsAndFeatures = AppInstaller::JSON::GetRawJsonArrayFromJsonNode(item, fields.AppsAndFeaturesEntries);
                 THROW_HR_IF(APPINSTALLER_CLI_ERROR_JSON_INVALID_FILE, !appsAndFeatures);
-                installerMetadata.AppsAndFeaturesEntries = parser.DeserializeAppsAndFeaturesEntries(appsAndFeatures.value());
+                installerMetadata.AppsAndFeaturesEntries = parser.DeserializeAppsAndFeaturesEntries(appsAndFeatures.value().get());
 
                 installerMetadata.Scope = GetStringFromFutureSchema(item, fields.Scope).value_or(std::string{});
 
@@ -633,96 +631,96 @@ namespace AppInstaller::Repository::Metadata
         }
     }
 
-    web::json::value ProductMetadata::ToJson_1_N()
+    Json::Value ProductMetadata::ToJson_1_N()
     {
         AICLI_LOG(Repo, Info, << "Creating metadata JSON " << SchemaVersion.ToString() << " fields");
 
         ProductMetadataFields_1_N fields{ SchemaVersion };
 
-        web::json::value result;
+        Json::Value result{ Json::objectValue };
 
-        result[fields.Version] = web::json::value::string(fields.SchemaVersion);
-        result[fields.ProductVersionMin] = AppInstaller::JSON::GetStringValue(ProductVersionMin.ToString());
-        result[fields.ProductVersionMax] = AppInstaller::JSON::GetStringValue(ProductVersionMax.ToString());
+        result[Utility::ConvertToUTF8(fields.Version)] = Utility::ConvertToUTF8(fields.SchemaVersion);
+        result[Utility::ConvertToUTF8(fields.ProductVersionMin)] = ProductVersionMin.ToString();
+        result[Utility::ConvertToUTF8(fields.ProductVersionMax)] = ProductVersionMax.ToString();
 
-        web::json::value metadataArray = web::json::value::array();
-        size_t metadataItemIndex = 0;
+        Json::Value metadataArray{ Json::arrayValue };
+        Json::ArrayIndex metadataItemIndex = 0;
         for (const auto& item : InstallerMetadataMap)
         {
-            web::json::value itemValue;
+            Json::Value itemValue{ Json::objectValue };
 
-            itemValue[fields.InstallerHash] = AppInstaller::JSON::GetStringValue(item.first);
-            itemValue[fields.SubmissionIdentifier] = AppInstaller::JSON::GetStringValue(item.second.SubmissionIdentifier);
+            itemValue[Utility::ConvertToUTF8(fields.InstallerHash)] = item.first;
+            itemValue[Utility::ConvertToUTF8(fields.SubmissionIdentifier)] = item.second.SubmissionIdentifier;
             SetStringFromFutureSchema(itemValue, fields.Scope, item.second.Scope);
             if (!fields.InstalledFiles.empty() && item.second.InstalledFiles.has_value())
             {
-                web::json::value installationMetadata;
+                Json::Value installationMetadata{ Json::objectValue };
 
-                installationMetadata[fields.DefaultInstallLocation] = AppInstaller::JSON::GetStringValue(item.second.InstalledFiles->DefaultInstallLocation);
+                installationMetadata[Utility::ConvertToUTF8(fields.DefaultInstallLocation)] = item.second.InstalledFiles->DefaultInstallLocation;
 
-                web::json::value installedFilesArray = web::json::value::array();
-                size_t installedFileIndex = 0;
+                Json::Value installedFilesArray{ Json::arrayValue };
+                Json::ArrayIndex installedFileIndex = 0;
                 for (const auto& entry : item.second.InstalledFiles->Files)
                 {
-                    web::json::value entryValue;
+                    Json::Value entryValue{ Json::objectValue };
                     AddFieldIfNotEmpty(entryValue, fields.InstalledFileRelativeFilePath, entry.RelativeFilePath);
                     AddFieldIfNotEmpty(entryValue, fields.InstalledFileInvocationParameter, entry.InvocationParameter);
                     AddFieldIfNotEmpty(entryValue, fields.InstalledFileDisplayName, entry.DisplayName);
-                    entryValue[fields.InstalledFileType] = AppInstaller::JSON::GetStringValue(Manifest::InstalledFileTypeToString(entry.FileType));
+                    entryValue[Utility::ConvertToUTF8(fields.InstalledFileType)] = std::string{ Manifest::InstalledFileTypeToString(entry.FileType) };
                     if (!entry.FileSha256.empty())
                     {
-                        entryValue[fields.InstalledFileSha256] = AppInstaller::JSON::GetStringValue(SHA256::ConvertToString(entry.FileSha256));
+                        entryValue[Utility::ConvertToUTF8(fields.InstalledFileSha256)] = SHA256::ConvertToString(entry.FileSha256);
                     }
                     installedFilesArray[installedFileIndex++] = std::move(entryValue);
                 }
-                installationMetadata[fields.InstallationMetadataFiles] = std::move(installedFilesArray);
+                installationMetadata[Utility::ConvertToUTF8(fields.InstallationMetadataFiles)] = std::move(installedFilesArray);
 
-                itemValue[fields.InstalledFiles] = std::move(installationMetadata);
+                itemValue[Utility::ConvertToUTF8(fields.InstalledFiles)] = std::move(installationMetadata);
             }
 
             if (!fields.InstalledStartupLinks.empty() && item.second.StartupLinkFiles.has_value())
             {
-                web::json::value startupLinkFilesArray = web::json::value::array();
-                size_t startupLinkFileIndex = 0;
+                Json::Value startupLinkFilesArray{ Json::arrayValue };
+                Json::ArrayIndex startupLinkFileIndex = 0;
                 for (const auto& entry : item.second.StartupLinkFiles.value())
                 {
-                    web::json::value entryValue;
-                    entryValue[fields.InstalledStartupLinkPath] = AppInstaller::JSON::GetStringValue(entry.RelativeFilePath);
-                    entryValue[fields.InstalledStartupLinkType] = AppInstaller::JSON::GetStringValue(Manifest::InstalledFileTypeToString(entry.FileType));
+                    Json::Value entryValue{ Json::objectValue };
+                    entryValue[Utility::ConvertToUTF8(fields.InstalledStartupLinkPath)] = entry.RelativeFilePath;
+                    entryValue[Utility::ConvertToUTF8(fields.InstalledStartupLinkType)] = std::string{ Manifest::InstalledFileTypeToString(entry.FileType) };
 
                     startupLinkFilesArray[startupLinkFileIndex++] = std::move(entryValue);
                 }
 
-                itemValue[fields.InstalledStartupLinks] = std::move(startupLinkFilesArray);
+                itemValue[Utility::ConvertToUTF8(fields.InstalledStartupLinks)] = std::move(startupLinkFilesArray);
             }
 
             if (!fields.Icons.empty() && !item.second.Icons.empty())
             {
-                web::json::value iconsArray = web::json::value::array();
-                size_t iconIndex = 0;
+                Json::Value iconsArray{ Json::arrayValue };
+                Json::ArrayIndex iconIndex = 0;
                 for (const auto& entry : item.second.Icons)
                 {
-                    web::json::value entryValue;
-                    entryValue[fields.IconContent] = AppInstaller::JSON::GetStringValue(AppInstaller::JSON::Base64Encode(entry.IconContent));
+                    Json::Value entryValue{ Json::objectValue };
+                    entryValue[Utility::ConvertToUTF8(fields.IconContent)] = AppInstaller::JSON::Base64Encode(entry.IconContent);
                     if (!entry.IconSha256.empty())
                     {
-                        entryValue[fields.IconSha256] = AppInstaller::JSON::GetStringValue(SHA256::ConvertToString(entry.IconSha256));
+                        entryValue[Utility::ConvertToUTF8(fields.IconSha256)] = SHA256::ConvertToString(entry.IconSha256);
                     }
-                    entryValue[fields.IconFileType] = AppInstaller::JSON::GetStringValue(Manifest::IconFileTypeToString(entry.IconFileType));
-                    entryValue[fields.IconTheme] = AppInstaller::JSON::GetStringValue(Manifest::IconThemeToString(entry.IconTheme));
-                    entryValue[fields.IconResolution] = AppInstaller::JSON::GetStringValue(Manifest::IconResolutionToString(entry.IconResolution));
+                    entryValue[Utility::ConvertToUTF8(fields.IconFileType)] = std::string{ Manifest::IconFileTypeToString(entry.IconFileType) };
+                    entryValue[Utility::ConvertToUTF8(fields.IconTheme)] = std::string{ Manifest::IconThemeToString(entry.IconTheme) };
+                    entryValue[Utility::ConvertToUTF8(fields.IconResolution)] = std::string{ Manifest::IconResolutionToString(entry.IconResolution) };
 
                     iconsArray[iconIndex++] = std::move(entryValue);
                 }
 
-                itemValue[fields.Icons] = std::move(iconsArray);
+                itemValue[Utility::ConvertToUTF8(fields.Icons)] = std::move(iconsArray);
             }
 
-            web::json::value appsAndFeaturesArray = web::json::value::array();
-            size_t appsAndFeaturesEntryIndex = 0;
+            Json::Value appsAndFeaturesArray{ Json::arrayValue };
+            Json::ArrayIndex appsAndFeaturesEntryIndex = 0;
             for (const auto& entry : item.second.AppsAndFeaturesEntries)
             {
-                web::json::value entryValue;
+                Json::Value entryValue{ Json::objectValue };
 
                 AddFieldIfNotEmpty(entryValue, fields.DisplayName, entry.DisplayName);
                 AddFieldIfNotEmpty(entryValue, fields.Publisher, entry.Publisher);
@@ -731,36 +729,36 @@ namespace AppInstaller::Repository::Metadata
                 AddFieldIfNotEmpty(entryValue, fields.UpgradeCode, entry.UpgradeCode);
                 if (entry.InstallerType != Manifest::InstallerTypeEnum::Unknown)
                 {
-                    entryValue[fields.InstallerType] = AppInstaller::JSON::GetStringValue(Manifest::InstallerTypeToString(entry.InstallerType));
+                    entryValue[Utility::ConvertToUTF8(fields.InstallerType)] = std::string{ Manifest::InstallerTypeToString(entry.InstallerType) };
                 }
 
                 appsAndFeaturesArray[appsAndFeaturesEntryIndex++] = std::move(entryValue);
             }
 
-            itemValue[fields.AppsAndFeaturesEntries] = std::move(appsAndFeaturesArray);
+            itemValue[Utility::ConvertToUTF8(fields.AppsAndFeaturesEntries)] = std::move(appsAndFeaturesArray);
 
             metadataArray[metadataItemIndex++] = std::move(itemValue);
         }
 
-        result[fields.Metadata] = std::move(metadataArray);
+        result[Utility::ConvertToUTF8(fields.Metadata)] = std::move(metadataArray);
 
-        web::json::value historicalArray = web::json::value::array();
-        size_t historicalItemIndex = 0;
+        Json::Value historicalArray{ Json::arrayValue };
+        Json::ArrayIndex historicalItemIndex = 0;
         for (const auto& item : HistoricalMetadataList)
         {
-            web::json::value itemValue;
+            Json::Value itemValue{ Json::objectValue };
 
-            itemValue[fields.VersionMin] = AppInstaller::JSON::GetStringValue(item.ProductVersionMin.ToString());
-            itemValue[fields.VersionMax] = AppInstaller::JSON::GetStringValue(item.ProductVersionMax.ToString());
-            itemValue[fields.Names] = CreateStringArray(item.Names);
-            itemValue[fields.Publishers] = CreateStringArray(item.Publishers);
-            itemValue[fields.ProductCodes] = CreateStringArray(item.ProductCodes);
-            itemValue[fields.UpgradeCodes] = CreateStringArray(item.UpgradeCodes);
+            itemValue[Utility::ConvertToUTF8(fields.VersionMin)] = item.ProductVersionMin.ToString();
+            itemValue[Utility::ConvertToUTF8(fields.VersionMax)] = item.ProductVersionMax.ToString();
+            itemValue[Utility::ConvertToUTF8(fields.Names)] = CreateStringArray(item.Names);
+            itemValue[Utility::ConvertToUTF8(fields.Publishers)] = CreateStringArray(item.Publishers);
+            itemValue[Utility::ConvertToUTF8(fields.ProductCodes)] = CreateStringArray(item.ProductCodes);
+            itemValue[Utility::ConvertToUTF8(fields.UpgradeCodes)] = CreateStringArray(item.UpgradeCodes);
 
             historicalArray[historicalItemIndex++] = std::move(itemValue);
         }
 
-        result[fields.Historical] = std::move(historicalArray);
+        result[Utility::ConvertToUTF8(fields.Historical)] = std::move(historicalArray);
 
         return result;
     }
@@ -897,16 +895,16 @@ namespace AppInstaller::Repository::Metadata
         // Parse and validate JSON
         try
         {
-            utility::string_t versionFieldName = L"version";
+            std::wstring versionFieldName = L"version";
 
-            web::json::value inputValue = web::json::value::parse(json);
+            Json::Value inputValue = Rest::Json::Parse(json);
 
-            THROW_HR_IF(APPINSTALLER_CLI_ERROR_JSON_INVALID_FILE, inputValue.is_null());
+            THROW_HR_IF(APPINSTALLER_CLI_ERROR_JSON_INVALID_FILE, inputValue.isNull());
 
             Version inputVersion = Version{ GetRequiredString(inputValue, versionFieldName) };
             AICLI_LOG(Repo, Info, << "Parsing input JSON version " << inputVersion.ToString());
 
-            web::json::value mergedResult;
+            Json::Value mergedResult;
 
             if (inputVersion.PartAt(0).Integer == 1)
             {
@@ -918,14 +916,11 @@ namespace AppInstaller::Repository::Metadata
                 THROW_HR(HRESULT_FROM_WIN32(ERROR_UNSUPPORTED_TYPE));
             }
 
-            std::wostringstream outputStream;
-            mergedResult.serialize(outputStream);
-
-            return std::move(outputStream).str();
+            return Utility::ConvertToUTF16(Rest::Json::Serialize(mergedResult));
         }
-        catch (const web::json::json_exception& exc)
+        catch (const wil::ResultException& re)
         {
-            AICLI_LOG(Repo, Error, << "Exception parsing input JSON: " << exc.what());
+            AICLI_LOG(Repo, Error, << "Exception parsing input JSON: " << GetUserPresentableMessage(re));
         }
 
         // We will return within the try or throw a non-json exception, so if we get here it was a json exception.
@@ -934,7 +929,7 @@ namespace AppInstaller::Repository::Metadata
 
     void InstallerMetadataCollectionContext::CompleteWithThreadGlobalsSet(std::ostream& output)
     {
-        web::json::value outputJSON;
+        Json::Value outputJSON;
 
         if (!ContainsError())
         {
@@ -973,7 +968,7 @@ namespace AppInstaller::Repository::Metadata
         }
 
         // Write output
-        outputJSON.serialize(output);
+        output << Rest::Json::Serialize(outputJSON);
     }
 
     std::unique_ptr<ThreadLocalStorage::PreviousThreadGlobals> InstallerMetadataCollectionContext::InitializeLogging(ThreadLocalStorage::WingetThreadGlobals& threadGlobals, const std::filesystem::path& logFile)
@@ -1010,11 +1005,11 @@ namespace AppInstaller::Repository::Metadata
             // Parse and validate JSON
             try
             {
-                utility::string_t versionFieldName = L"version";
+                std::wstring versionFieldName = L"version";
 
-                web::json::value inputValue = web::json::value::parse(json);
+                Json::Value inputValue = Rest::Json::Parse(json);
 
-                THROW_HR_IF(APPINSTALLER_CLI_ERROR_JSON_INVALID_FILE, inputValue.is_null());
+                THROW_HR_IF(APPINSTALLER_CLI_ERROR_JSON_INVALID_FILE, inputValue.isNull());
 
                 m_inputVersion = Version{ GetRequiredString(inputValue, versionFieldName) };
                 AICLI_LOG(Repo, Info, << "Parsing input JSON version " << m_inputVersion.ToString());
@@ -1030,9 +1025,9 @@ namespace AppInstaller::Repository::Metadata
                     THROW_HR(HRESULT_FROM_WIN32(ERROR_UNSUPPORTED_TYPE));
                 }
             }
-            catch (const web::json::json_exception& exc)
+            catch (const wil::ResultException& re)
             {
-                AICLI_LOG(Repo, Error, << "Exception parsing input JSON: " << exc.what());
+                AICLI_LOG(Repo, Error, << "Exception parsing input JSON: " << GetUserPresentableMessage(re));
                 throw;
             }
 
@@ -1216,41 +1211,41 @@ namespace AppInstaller::Repository::Metadata
         // Create the diagnostics data, based on the other values from the correlation result.
         DiagnosticFields fields;
 
-        m_outputDiagnostics[fields.Reason] = AppInstaller::JSON::GetStringValue(correlationResult.Reason);
-        m_outputDiagnostics[fields.ChangedEntryCount] = web::json::value::number(static_cast<int64_t>(correlationResult.ChangesToARP));
-        m_outputDiagnostics[fields.MatchedEntryCount] = web::json::value::number(static_cast<int64_t>(correlationResult.MatchesInARP));
-        m_outputDiagnostics[fields.IntersectionCount] = web::json::value::number(static_cast<int64_t>(correlationResult.CountOfIntersectionOfChangesAndMatches));
+        m_outputDiagnostics[Utility::ConvertToUTF8(fields.Reason)] = correlationResult.Reason;
+        m_outputDiagnostics[Utility::ConvertToUTF8(fields.ChangedEntryCount)] = Json::Int64{ static_cast<int64_t>(correlationResult.ChangesToARP) };
+        m_outputDiagnostics[Utility::ConvertToUTF8(fields.MatchedEntryCount)] = Json::Int64{ static_cast<int64_t>(correlationResult.MatchesInARP) };
+        m_outputDiagnostics[Utility::ConvertToUTF8(fields.IntersectionCount)] = Json::Int64{ static_cast<int64_t>(correlationResult.CountOfIntersectionOfChangesAndMatches) };
 
         constexpr size_t MaximumDiagnosticMeasures = 10;
-        web::json::value measuresArray = web::json::value::array();
+        Json::Value measuresArray{ Json::arrayValue };
         for (size_t i = 0; i < correlationResult.Measures.size() && i < MaximumDiagnosticMeasures; ++i)
         {
-            web::json::value measureValue;
+            Json::Value measureValue{ Json::objectValue };
             const auto& measure = correlationResult.Measures[i];
 
-            measureValue[fields.Value] = web::json::value::number(measure.Measure);
-            measureValue[fields.Name] = AppInstaller::JSON::GetStringValue(measure.Package->GetProperty(PackageVersionProperty::Name));
-            measureValue[fields.Publisher] = AppInstaller::JSON::GetStringValue(measure.Package->GetProperty(PackageVersionProperty::Publisher));
+            measureValue[Utility::ConvertToUTF8(fields.Value)] = measure.Measure;
+            measureValue[Utility::ConvertToUTF8(fields.Name)] = measure.Package->GetProperty(PackageVersionProperty::Name).get();
+            measureValue[Utility::ConvertToUTF8(fields.Publisher)] = measure.Package->GetProperty(PackageVersionProperty::Publisher).get();
 
-            measuresArray[i] = std::move(measureValue);
+            measuresArray[static_cast<Json::ArrayIndex>(i)] = std::move(measureValue);
         }
 
-        m_outputDiagnostics[fields.CorrelationMeasures] = std::move(measuresArray);
+        m_outputDiagnostics[Utility::ConvertToUTF8(fields.CorrelationMeasures)] = std::move(measuresArray);
     }
 
-    void InstallerMetadataCollectionContext::ParseInputJson_1_0(web::json::value& input)
+    void InstallerMetadataCollectionContext::ParseInputJson_1_0(Json::Value& input)
     {
         AICLI_LOG(Repo, Info, << "Parsing input JSON 1.0 fields");
 
         // Field names
-        utility::string_t metadataVersionFieldName = L"supportedMetadataVersion";
-        utility::string_t metadataFieldName = L"currentMetadata";
-        utility::string_t submissionDataFieldName = L"submissionData";
-        utility::string_t submissionIdentifierFieldName = L"submissionIdentifier";
-        utility::string_t packageDataFieldName = L"packageData";
-        utility::string_t installerHashFieldName = L"installerHash";
-        utility::string_t defaultLocaleFieldName = L"DefaultLocale";
-        utility::string_t localesFieldName = L"Locales";
+        std::wstring metadataVersionFieldName = L"supportedMetadataVersion";
+        std::wstring metadataFieldName = L"currentMetadata";
+        std::wstring submissionDataFieldName = L"submissionData";
+        std::wstring submissionIdentifierFieldName = L"submissionIdentifier";
+        std::wstring packageDataFieldName = L"packageData";
+        std::wstring installerHashFieldName = L"installerHash";
+        std::wstring defaultLocaleFieldName = L"DefaultLocale";
+        std::wstring localesFieldName = L"Locales";
 
         // root fields
         m_supportedMetadataVersion = Version{ GetRequiredString(input, metadataVersionFieldName) };
@@ -1281,7 +1276,7 @@ namespace AppInstaller::Repository::Metadata
             auto defaultLocaleValue = AppInstaller::JSON::GetJsonValueFromNode(packageDataValue.value(), defaultLocaleFieldName);
             THROW_HR_IF(APPINSTALLER_CLI_ERROR_JSON_INVALID_FILE, !defaultLocaleValue);
 
-            auto defaultLocale = parser.DeserializeLocale(defaultLocaleValue.value());
+            auto defaultLocale = parser.DeserializeLocale(defaultLocaleValue.value().get());
             THROW_HR_IF(APPINSTALLER_CLI_ERROR_JSON_INVALID_FILE,
                 !defaultLocale ||
                 !defaultLocale->Contains(Manifest::Localization::PackageName) ||
@@ -1304,17 +1299,17 @@ namespace AppInstaller::Repository::Metadata
         }
     }
 
-    web::json::value InstallerMetadataCollectionContext::CreateOutputJson_1_0()
+    Json::Value InstallerMetadataCollectionContext::CreateOutputJson_1_0()
     {
         AICLI_LOG(Repo, Info, << "Setting output JSON 1.0 fields");
 
         OutputFields_1_0 fields;
 
-        web::json::value result;
+        Json::Value result{ Json::objectValue };
 
-        result[fields.Version] = web::json::value::string(L"1.0");
-        result[fields.SubmissionData] = m_submissionData;
-        result[fields.InstallerHash] = AppInstaller::JSON::GetStringValue(m_installerHash);
+        result[Utility::ConvertToUTF8(fields.Version)] = "1.0";
+        result[Utility::ConvertToUTF8(fields.SubmissionData)] = m_submissionData;
+        result[Utility::ConvertToUTF8(fields.InstallerHash)] = m_installerHash;
 
         // Limit output status to 1.0 known values
         OutputStatus statusToUse = OutputStatus::Unknown;
@@ -1322,19 +1317,19 @@ namespace AppInstaller::Repository::Metadata
         {
             statusToUse = m_outputStatus;
         }
-        result[fields.Status] = web::json::value::string(ToString(statusToUse));
+        result[Utility::ConvertToUTF8(fields.Status)] = Utility::ConvertToUTF8(ToString(statusToUse));
 
         if (m_outputStatus == OutputStatus::Success)
         {
-            result[fields.Metadata] = m_outputMetadata.ToJson(m_supportedMetadataVersion, 0);
+            result[Utility::ConvertToUTF8(fields.Metadata)] = m_outputMetadata.ToJson(m_supportedMetadataVersion, 0);
         }
 
-        result[fields.Diagnostics] = m_outputDiagnostics;
+        result[Utility::ConvertToUTF8(fields.Diagnostics)] = m_outputDiagnostics;
 
         return result;
     }
 
-    utility::string_t InstallerMetadataCollectionContext::ToString(OutputStatus status)
+    std::wstring InstallerMetadataCollectionContext::ToString(OutputStatus status)
     {
         switch (status)
         {
@@ -1382,36 +1377,36 @@ namespace AppInstaller::Repository::Metadata
         }
     }
 
-    web::json::value InstallerMetadataCollectionContext::CreateErrorJson_1_0()
+    Json::Value InstallerMetadataCollectionContext::CreateErrorJson_1_0()
     {
         AICLI_LOG(Repo, Info, << "Setting error JSON 1.0 fields");
 
         OutputFields_1_0 fields;
         DiagnosticFields diagnosticFields;
 
-        web::json::value result;
+        Json::Value result{ Json::objectValue };
 
-        result[fields.Version] = web::json::value::string(L"1.0");
-        result[fields.SubmissionData] = m_submissionData;
-        result[fields.InstallerHash] = AppInstaller::JSON::GetStringValue(m_installerHash);
-        result[fields.Status] = web::json::value::string(ToString(OutputStatus::Error));
-        result[fields.Metadata] = web::json::value::null();
+        result[Utility::ConvertToUTF8(fields.Version)] = "1.0";
+        result[Utility::ConvertToUTF8(fields.SubmissionData)] = m_submissionData;
+        result[Utility::ConvertToUTF8(fields.InstallerHash)] = m_installerHash;
+        result[Utility::ConvertToUTF8(fields.Status)] = Utility::ConvertToUTF8(ToString(OutputStatus::Error));
+        result[Utility::ConvertToUTF8(fields.Metadata)] = Json::Value{};
 
-        web::json::value error;
+        Json::Value error{ Json::objectValue };
 
-        error[diagnosticFields.ErrorHR] = web::json::value::number(static_cast<int64_t>(m_errorHR));
-        error[diagnosticFields.ErrorText] = AppInstaller::JSON::GetStringValue(m_errorText);
+        error[Utility::ConvertToUTF8(diagnosticFields.ErrorHR)] = Json::Int64{ static_cast<int64_t>(m_errorHR) };
+        error[Utility::ConvertToUTF8(diagnosticFields.ErrorText)] = m_errorText;
 
-        result[fields.Diagnostics] = std::move(error);
+        result[Utility::ConvertToUTF8(fields.Diagnostics)] = std::move(error);
 
         return result;
     }
 
-    web::json::value InstallerMetadataCollectionContext::Merge_1_0(web::json::value& input, size_t maximumSizeInBytes)
+    Json::Value InstallerMetadataCollectionContext::Merge_1_0(Json::Value& input, size_t maximumSizeInBytes)
     {
         AICLI_LOG(Repo, Info, << "Merging 1.0 input metadatas");
 
-        utility::string_t metadatasFieldName = L"metadatas";
+        std::wstring metadatasFieldName = L"metadatas";
 
         auto metadatasValue = AppInstaller::JSON::GetRawJsonArrayFromJsonNode(input, metadatasFieldName);
         THROW_HR_IF(APPINSTALLER_CLI_ERROR_JSON_INVALID_FILE, !metadatasValue);

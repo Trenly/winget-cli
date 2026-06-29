@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 #pragma once
-#include <cpprest/json.h>
+#include <json/json.h>
 #include <winget/Authentication.h>
 #include <winget/ManifestCommon.h>
 
@@ -23,5 +23,5 @@ namespace AppInstaller::Repository::Rest::Schema
     //         "Scope" : "test"
     //     }
     // }
-    Authentication::AuthenticationInfo ParseAuthenticationInfo(const web::json::value& dataObject, ParseAuthenticationInfoType parseType, std::optional<Manifest::ManifestVer> manifestVersion = {});
+    Authentication::AuthenticationInfo ParseAuthenticationInfo(const Json::Value& dataObject, ParseAuthenticationInfoType parseType, std::optional<Manifest::ManifestVer> manifestVersion = {});
 }

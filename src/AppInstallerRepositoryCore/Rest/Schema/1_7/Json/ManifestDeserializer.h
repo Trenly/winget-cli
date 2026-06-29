@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 #pragma once
 #include "Rest/Schema/1_6/Json/ManifestDeserializer.h"
@@ -10,9 +10,9 @@ namespace AppInstaller::Repository::Rest::Schema::V1_7::Json
     {
     protected:
 
-        std::optional<Manifest::ManifestInstaller> DeserializeInstaller(const web::json::value& installerJsonObject) const override;
+        std::optional<Manifest::ManifestInstaller> DeserializeInstaller(const ::Json::Value& installerJsonObject) const override;
 
-        std::map<Manifest::InstallerSwitchType, Manifest::string_t> DeserializeInstallerSwitches(const web::json::value& installerSwitchesJsonObject) const override;
+        std::map<Manifest::InstallerSwitchType, Manifest::string_t> DeserializeInstallerSwitches(const ::Json::Value& installerSwitchesJsonObject) const override;
 
         Manifest::ManifestVer GetManifestVersion() const override;
     };

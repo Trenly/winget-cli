@@ -20,30 +20,30 @@ TEST_CASE("SearchRequestSerializer_InclusionsFilters", "[RestSource]")
     searchRequest.MaximumResults = 10;
 
     V1_0::Json::SearchRequestSerializer serializer;
-    web::json::value actual = serializer.Serialize(searchRequest);
+    Json::Value actual = serializer.Serialize(searchRequest);
 
-    REQUIRE(!actual.is_null());
-    REQUIRE(!actual.has_field(L"FetchAllManifests"));
-    REQUIRE(actual.at(L"MaximumResults").as_integer() == static_cast<int>(searchRequest.MaximumResults));
+    REQUIRE(!actual.isNull());
+    REQUIRE(!actual.isMember("FetchAllManifests"));
+    REQUIRE(actual["MaximumResults"].asInt() == static_cast<int>(searchRequest.MaximumResults));
 
     // Inclusions
-    web::json::array inclusions = actual.at(L"Inclusions").as_array();
+    const auto& inclusions = actual["Inclusions"];
     REQUIRE(inclusions.size() == 2);
-    REQUIRE(inclusions.at(0).at(L"PackageMatchField").as_string() == L"PackageIdentifier");
-    REQUIRE(inclusions.at(1).at(L"PackageMatchField").as_string() == L"PackageName");
-    web::json::value requestMatch = inclusions.at(0).at(L"RequestMatch");
-    REQUIRE(!requestMatch.is_null());
-    REQUIRE(requestMatch.at(L"KeyWord").as_string() == L"Foo.Bar");
-    REQUIRE(requestMatch.at(L"MatchType").as_string() == L"Substring");
+    REQUIRE(inclusions[0]["PackageMatchField"].asString() == "PackageIdentifier");
+    REQUIRE(inclusions[1]["PackageMatchField"].asString() == "PackageName");
+    const auto& requestMatch = inclusions[0]["RequestMatch"];
+    REQUIRE(!requestMatch.isNull());
+    REQUIRE(requestMatch["KeyWord"].asString() == "Foo.Bar");
+    REQUIRE(requestMatch["MatchType"].asString() == "Substring");
 
     // Filters
-    web::json::array filters = actual.at(L"Filters").as_array();
+    const auto& filters = actual["Filters"];
     REQUIRE(filters.size() == 1);
-    REQUIRE(filters.at(0).at(L"PackageMatchField").as_string() == L"Moniker");
-    web::json::value requestMatchFilter = filters.at(0).at(L"RequestMatch");
-    REQUIRE(!requestMatchFilter.is_null());
-    REQUIRE(requestMatchFilter.at(L"KeyWord").as_string() == L"FooBar");
-    REQUIRE(requestMatchFilter.at(L"MatchType").as_string() == L"Exact");
+    REQUIRE(filters[0]["PackageMatchField"].asString() == "Moniker");
+    const auto& requestMatchFilter = filters[0]["RequestMatch"];
+    REQUIRE(!requestMatchFilter.isNull());
+    REQUIRE(requestMatchFilter["KeyWord"].asString() == "FooBar");
+    REQUIRE(requestMatchFilter["MatchType"].asString() == "Exact");
 }
 
 TEST_CASE("SearchRequestSerializer_Query", "[RestSource]")
@@ -52,21 +52,21 @@ TEST_CASE("SearchRequestSerializer_Query", "[RestSource]")
     searchRequest.Query = RequestMatch(MatchType::Substring, "Foo.Bar");
 
     V1_0::Json::SearchRequestSerializer serializer;
-    web::json::value actual = serializer.Serialize(std::move(searchRequest));
+    Json::Value actual = serializer.Serialize(std::move(searchRequest));
 
-    REQUIRE(!actual.is_null());
-    web::json::value query = actual.at(L"Query");
-    REQUIRE(query.at(L"KeyWord").as_string() == L"Foo.Bar");
-    REQUIRE(query.at(L"MatchType").as_string() == L"Substring");
+    REQUIRE(!actual.isNull());
+    const auto& query = actual["Query"];
+    REQUIRE(query["KeyWord"].asString() == "Foo.Bar");
+    REQUIRE(query["MatchType"].asString() == "Substring");
 }
 
 TEST_CASE("SearchRequestSerializer_FetchAllManifests", "[RestSource]")
 {
     V1_0::Json::SearchRequestSerializer serializer;
-    web::json::value actual = serializer.Serialize({});
+    Json::Value actual = serializer.Serialize({});
 
-    REQUIRE(!actual.is_null());
-    REQUIRE(actual.at(L"FetchAllManifests").as_bool());
+    REQUIRE(!actual.isNull());
+    REQUIRE(actual["FetchAllManifests"].asBool());
 }
 
 TEST_CASE("SearchRequestSerializer_NewFields", "[RestSource]")
@@ -77,12 +77,12 @@ TEST_CASE("SearchRequestSerializer_NewFields", "[RestSource]")
     searchRequest.Filters.emplace_back(PackageMatchFilter(PackageMatchField::Market, MatchType::Exact, "FooBar"));
 
     V1_0::Json::SearchRequestSerializer serializerV1_0;
-    web::json::value actual_1_0 = serializerV1_0.Serialize(searchRequest);
-    REQUIRE(!actual_1_0.is_null());
-    REQUIRE(actual_1_0.at(L"Filters").as_array().size() == 0);
+    Json::Value actual_1_0 = serializerV1_0.Serialize(searchRequest);
+    REQUIRE(!actual_1_0.isNull());
+    REQUIRE(actual_1_0["Filters"].size() == 0);
 
     V1_1::Json::SearchRequestSerializer serializerV1_1;
-    web::json::value actual_1_1 = serializerV1_1.Serialize(searchRequest);
-    REQUIRE(!actual_1_1.is_null());
-    REQUIRE(actual_1_1.at(L"Filters").as_array().size() == 1);
+    Json::Value actual_1_1 = serializerV1_1.Serialize(searchRequest);
+    REQUIRE(!actual_1_1.isNull());
+    REQUIRE(actual_1_1["Filters"].size() == 1);
 }

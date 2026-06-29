@@ -5,7 +5,6 @@
 #include "Rest/Schema/CommonRestConstants.h"
 #include "Rest/Schema/IRestClient.h"
 #include <winget/HttpClientHelper.h>
-#include <winget/JsonUtil.h>
 
 namespace AppInstaller::Repository::Rest::Schema::V1_7
 {
@@ -16,7 +15,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_7
         const Http::HttpClientHelper::HttpRequestHeaders& additionalHeaders,
         Authentication::AuthenticationArguments authArgs) : V1_6::Interface(restApi, httpClientHelper, std::move(information), additionalHeaders), m_authArgs(std::move(authArgs))
     {
-        m_requiredRestApiHeaders[JSON::GetUtilityString(ContractVersion)] = JSON::GetUtilityString(Version_1_7_0.ToString());
+        m_requiredRestApiHeaders[Utility::ConvertToUTF16(ContractVersion)] = Utility::ConvertToUTF16(Version_1_7_0.ToString());
 
         if (m_information.Authentication.Type == Authentication::AuthenticationType::MicrosoftEntraId)
         {
@@ -47,7 +46,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_7
                 AICLI_LOG(Repo, Error, << "Authentication failed. Result: " << authResult.Status);
                 THROW_HR_MSG(authResult.Status, "Failed to authenticate for MicrosoftEntraId");
             }
-            result.insert_or_assign(web::http::header_names::authorization, JSON::GetUtilityString(Authentication::CreateBearerToken(authResult.Token)));
+            result.insert_or_assign(L"Authorization", Utility::ConvertToUTF16(Authentication::CreateBearerToken(authResult.Token)));
         }
 
         return result;

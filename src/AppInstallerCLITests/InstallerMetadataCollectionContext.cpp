@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 #include "pch.h"
 #include "TestCommon.h"
@@ -6,6 +6,8 @@
 #include "TestHooks.h"
 
 #include <winget/InstallerMetadataCollectionContext.h>
+#include <winget/JsonUtil.h>
+#include <winget/RestHelpers.h>
 
 using namespace AppInstaller;
 using namespace AppInstaller::Repository;
@@ -54,7 +56,7 @@ namespace
         std::optional<std::string> Version;
         std::optional<std::string> SupportedMetadataVersion;
         std::optional<ProductMetadata> CurrentMetadata;
-        std::optional<web::json::value> SubmissionData;
+        std::optional<Json::Value> SubmissionData;
         std::optional<std::string> SubmissionIdentifier;
         std::optional<std::string> InstallerHash;
         // Schema 1.0 only cares about DefaultLocale and Locales
@@ -62,71 +64,71 @@ namespace
 
         std::wstring ToJSON()
         {
-            web::json::value json;
+            Json::Value json;
 
             if (Version)
             {
-                json[L"version"] = JSON::GetStringValue(Version.value());
+                json["version"] = JSON::GetStringValue(Version.value());
             }
 
             if (SupportedMetadataVersion)
             {
-                json[L"supportedMetadataVersion"] = JSON::GetStringValue(SupportedMetadataVersion.value());
+                json["supportedMetadataVersion"] = JSON::GetStringValue(SupportedMetadataVersion.value());
             }
 
             if (CurrentMetadata)
             {
-                json[L"currentMetadata"] = CurrentMetadata->ToJson(CurrentMetadata->SchemaVersion, 0);
+                json["currentMetadata"] = CurrentMetadata->ToJson(CurrentMetadata->SchemaVersion, 0);
             }
 
             if (SubmissionData)
             {
-                json[L"submissionData"] = SubmissionData.value();
+                json["submissionData"] = SubmissionData.value();
             }
             else if (SubmissionIdentifier)
             {
-                web::json::value submissionData;
-                submissionData[L"submissionIdentifier"] = JSON::GetStringValue(SubmissionIdentifier.value());
-                json[L"submissionData"] = std::move(submissionData);
+                Json::Value submissionData;
+                submissionData["submissionIdentifier"] = JSON::GetStringValue(SubmissionIdentifier.value());
+                json["submissionData"] = std::move(submissionData);
             }
 
             if (InstallerHash || PackageData)
             {
-                web::json::value packageData;
+                Json::Value packageData;
 
                 if (InstallerHash)
                 {
-                    packageData[L"installerHash"] = JSON::GetStringValue(InstallerHash.value());
+                    packageData["installerHash"] = JSON::GetStringValue(InstallerHash.value());
                 }
 
                 if (PackageData)
                 {
-                    packageData[L"DefaultLocale"] = LocaleToJSON(PackageData->DefaultLocalization);
+                    packageData["DefaultLocale"] = LocaleToJSON(PackageData->DefaultLocalization);
 
                     // TODO: Implement other locales
                 }
 
-                json[L"packageData"] = std::move(packageData);
+                json["packageData"] = std::move(packageData);
             }
 
-            return json.serialize();
+            return Utility::ConvertToUTF16(AppInstaller::Rest::Json::Serialize(json));
         }
 
     private:
-        web::json::value LocaleToJSON(const Manifest::ManifestLocalization& localization) const
+        Json::Value LocaleToJSON(const Manifest::ManifestLocalization& localization) const
         {
-            web::json::value locale;
+            Json::Value locale;
 
-            locale[L"PackageLocale"] = JSON::GetStringValue(localization.Locale);
+            locale["PackageLocale"] = JSON::GetStringValue(localization.Locale);
 
             if (localization.Contains(Manifest::Localization::PackageName))
             {
-                locale[L"PackageName"] = JSON::GetStringValue(localization.Get<Manifest::Localization::PackageName>());
+                locale["PackageName"] = JSON::GetStringValue(localization.Get<Manifest::Localization::PackageName>());
             }
 
             if (localization.Contains(Manifest::Localization::Publisher))
             {
-                locale[L"Publisher"] = JSON::GetStringValue(localization.Get<Manifest::Localization::Publisher>());
+                locale["Publisher"] = JSON::GetStringValue(localization.Get<Manifest::Localization::Publisher>());
             }
 
             // TODO: Implement any other needed fields
@@ -139,7 +141,7 @@ namespace
     {
         TestOutput(const std::string& json) : OriginalJSON(json)
         {
-            web::json::value input = web::json::value::parse(Utility::ConvertToUTF16(json));
+            Json::Value input = AppInstaller::Rest::Json::Parse(json);
 
             auto versionString = JSON::GetRawStringValueFromJsonNode(input, L"version");
             if (versionString)
@@ -166,7 +168,7 @@ namespace
             }
 
             auto metadataValue = JSON::GetJsonValueFromNode(input, L"metadata");
-            if (metadataValue && !metadataValue->get().is_null())
+            if (metadataValue && !metadataValue->get().isNull())
             {
                 Metadata = std::make_optional<ProductMetadata>();
                 Metadata->FromJson(metadataValue->get());
@@ -192,7 +194,7 @@ namespace
         std::string OriginalJSON;
 
         std::optional<std::string> Version;
-        std::optional<web::json::value> SubmissionData;
+        std::optional<Json::Value> SubmissionData;
         std::optional<std::string> InstallerHash;
         std::optional<std::string> Status;
         std::optional<ProductMetadata> Metadata;
@@ -325,34 +327,34 @@ namespace
 
         std::wstring ToJSON()
         {
-            web::json::value json;
+            Json::Value json;
 
             if (Version)
             {
-                json[L"version"] = JSON::GetStringValue(Version.value());
+                json["version"] = JSON::GetStringValue(Version.value());
             }
 
             if (Metadatas)
             {
-                web::json::value metadatasArray;
+                Json::Value metadatasArray;
 
                 if (Metadatas->empty())
                 {
-                    metadatasArray = web::json::value::array();
+                    metadatasArray = Json::Value{ Json::arrayValue };
                 }
                 else
                 {
                     size_t index = 0;
                     for (auto& value : Metadatas.value())
                     {
-                        metadatasArray[index++] = value.ToJson(value.SchemaVersion, 0);
+                        metadatasArray[static_cast<Json::ArrayIndex>(index++)] = value.ToJson(value.SchemaVersion, 0);
                     }
                 }
 
-                json[L"metadatas"] = std::move(metadatasArray);
+                json["metadatas"] = std::move(metadatasArray);
             }
 
-            return json.serialize();
+            return Utility::ConvertToUTF16(AppInstaller::Rest::Json::Serialize(json));
         }
     };
 }
@@ -372,11 +374,11 @@ TEST_CASE("MetadataCollection_SubmissionDataCopied", "[metadata_collection]")
 {
     TestInput input(MinimalDefaults);
 
-    web::json::value submissionData;
+    Json::Value submissionData;
     std::wstring testValueName = L"testValueName";
     std::string testValueValue = "Test value value";
-    submissionData[L"submissionIdentifier"] = JSON::GetStringValue("Required identifier");
-    submissionData[testValueName] = JSON::GetStringValue(testValueValue);
+    submissionData["submissionIdentifier"] = JSON::GetStringValue("Required identifier");
+    submissionData[Utility::ConvertToUTF8(testValueName)] = JSON::GetStringValue(testValueValue);
 
     input.SubmissionData = submissionData;
 
@@ -666,7 +668,7 @@ TEST_CASE("MetadataCollection_Merge_DifferentInstallers", "[metadata_collection]
     REQUIRE(!mergeResult.empty());
 
     ProductMetadata mergeMetadata;
-    mergeMetadata.FromJson(web::json::value::parse(mergeResult));
+    mergeMetadata.FromJson(AppInstaller::Rest::Json::Parse(mergeResult));
 
     REQUIRE(mergeMetadata.InstallerMetadataMap.size() == 2);
     for (const auto& item : mergeMetadata.InstallerMetadataMap)
@@ -688,7 +690,7 @@ TEST_CASE("MetadataCollection_Merge_SameInstaller", "[metadata_collection]")
     REQUIRE(!mergeResult.empty());
 
     ProductMetadata mergeMetadata;
-    mergeMetadata.FromJson(web::json::value::parse(mergeResult));
+    mergeMetadata.FromJson(AppInstaller::Rest::Json::Parse(mergeResult));
 
     REQUIRE(mergeMetadata.InstallerMetadataMap.size() == 1);
     for (const auto& item : mergeMetadata.InstallerMetadataMap)
@@ -854,7 +856,7 @@ TEST_CASE("MetadataCollection_Merge_SameInstaller_Scopes", "[metadata_collection
     REQUIRE(!mergeResult.empty());
 
     ProductMetadata mergeMetadata;
-    mergeMetadata.FromJson(web::json::value::parse(mergeResult));
+    mergeMetadata.FromJson(AppInstaller::Rest::Json::Parse(mergeResult));
 
     REQUIRE(mergeMetadata.InstallerMetadataMap.size() == 1);
     for (const auto& item : mergeMetadata.InstallerMetadataMap)
@@ -1134,7 +1136,7 @@ TEST_CASE("MetadataCollection_Merge_SameInstaller_InstalledFiles", "[metadata_co
     REQUIRE(!mergeResult.empty());
 
     ProductMetadata mergeMetadata;
-    mergeMetadata.FromJson(web::json::value::parse(mergeResult));
+    mergeMetadata.FromJson(AppInstaller::Rest::Json::Parse(mergeResult));
 
     REQUIRE(mergeMetadata.InstallerMetadataMap.size() == 1);
     REQUIRE(mergeMetadata.InstallerMetadataMap.begin()->second.InstalledFiles.has_value());
@@ -1147,7 +1149,7 @@ TEST_CASE("MetadataCollection_Merge_SameInstaller_InstalledFiles", "[metadata_co
     mergeResult = InstallerMetadataCollectionContext::Merge(mergeData.ToJSON(), 0, {});
     REQUIRE(!mergeResult.empty());
 
-    mergeMetadata.FromJson(web::json::value::parse(mergeResult));
+    mergeMetadata.FromJson(AppInstaller::Rest::Json::Parse(mergeResult));
 
     REQUIRE(mergeMetadata.InstallerMetadataMap.size() == 1);
     REQUIRE(mergeMetadata.InstallerMetadataMap.begin()->second.InstalledFiles.has_value());
@@ -1164,7 +1166,7 @@ TEST_CASE("MetadataCollection_Merge_SameInstaller_InstalledFiles", "[metadata_co
     mergeResult = InstallerMetadataCollectionContext::Merge(mergeData.ToJSON(), 0, {});
     REQUIRE(!mergeResult.empty());
 
-    mergeMetadata.FromJson(web::json::value::parse(mergeResult));
+    mergeMetadata.FromJson(AppInstaller::Rest::Json::Parse(mergeResult));
 
     REQUIRE(mergeMetadata.InstallerMetadataMap.size() == 1);
     REQUIRE(mergeMetadata.InstallerMetadataMap.begin()->second.InstalledFiles.has_value());
@@ -1201,7 +1203,7 @@ TEST_CASE("MetadataCollection_Merge_SameInstaller_StartupLinkFiles", "[metadata_
     REQUIRE(!mergeResult.empty());
 
     ProductMetadata mergeMetadata;
-    mergeMetadata.FromJson(web::json::value::parse(mergeResult));
+    mergeMetadata.FromJson(AppInstaller::Rest::Json::Parse(mergeResult));
 
     REQUIRE(mergeMetadata.InstallerMetadataMap.size() == 1);
     REQUIRE(mergeMetadata.InstallerMetadataMap.begin()->second.StartupLinkFiles.has_value());
@@ -1214,7 +1216,7 @@ TEST_CASE("MetadataCollection_Merge_SameInstaller_StartupLinkFiles", "[metadata_
     mergeResult = InstallerMetadataCollectionContext::Merge(mergeData.ToJSON(), 0, {});
     REQUIRE(!mergeResult.empty());
 
-    mergeMetadata.FromJson(web::json::value::parse(mergeResult));
+    mergeMetadata.FromJson(AppInstaller::Rest::Json::Parse(mergeResult));
 
     REQUIRE(mergeMetadata.InstallerMetadataMap.size() == 1);
     REQUIRE(mergeMetadata.InstallerMetadataMap.begin()->second.StartupLinkFiles.has_value());
@@ -1256,7 +1258,7 @@ TEST_CASE("MetadataCollection_Merge_SameInstaller_Icons", "[metadata_collection]
     REQUIRE(!mergeResult.empty());
 
     ProductMetadata mergeMetadata;
-    mergeMetadata.FromJson(web::json::value::parse(mergeResult));
+    mergeMetadata.FromJson(AppInstaller::Rest::Json::Parse(mergeResult));
 
     // New data always take over
     REQUIRE(mergeMetadata.InstallerMetadataMap.size() == 1);

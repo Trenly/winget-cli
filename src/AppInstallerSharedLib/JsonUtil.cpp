@@ -68,50 +68,53 @@ namespace AppInstaller::JSON
         return std::nullopt;
     }
 
-#ifndef WINGET_DISABLE_FOR_FUZZING
-    utility::string_t GetUtilityString(std::string_view nodeName)
+    namespace
     {
-        return utility::conversions::to_string_t(nodeName.data());
+        std::string NormalizeJsonKey(std::string_view keyName)
+        {
+            return std::string{ keyName };
+        }
+
+        std::string NormalizeJsonKey(std::wstring_view keyName)
+        {
+            return Utility::ConvertToUTF8(keyName);
+        }
     }
 
-    web::json::value GetStringValue(std::string_view value)
+    std::optional<std::reference_wrapper<const Json::Value>> GetJsonValueFromNode(const Json::Value& node, std::string_view keyName)
     {
-        return web::json::value::string(Utility::ConvertToUTF16(value));
-    }
-
-    std::optional<std::reference_wrapper<const web::json::value>> GetJsonValueFromNode(const web::json::value& node, const utility::string_t& keyName)
-    {
-        if (node.is_null() || !node.has_field(keyName))
+        if (node.isNull() || !node.isObject())
         {
             return {};
         }
 
-        return node.at(keyName);
-    }
-
-    std::optional<std::string> GetRawStringValueFromJsonValue(const web::json::value& value)
-    {
-        if (value.is_null() || !value.is_string())
+        const std::string normalizedKeyName = NormalizeJsonKey(keyName);
+        if (!node.isMember(normalizedKeyName))
         {
             return {};
         }
 
-        return utility::conversions::to_utf8string(value.as_string());
+        return node[normalizedKeyName];
     }
 
-    std::optional<std::wstring> GetWideStringValueFromJsonValue(const web::json::value& value)
+    std::optional<std::reference_wrapper<const Json::Value>> GetJsonValueFromNode(const Json::Value& node, std::wstring_view keyName)
     {
-        if (value.is_null() || !value.is_string())
+        return GetJsonValueFromNode(node, NormalizeJsonKey(keyName));
+    }
+
+    std::optional<std::string> GetRawStringValueFromJsonValue(const Json::Value& value)
+    {
+        if (value.isNull() || !value.isString())
         {
             return {};
         }
 
-        return value.as_string();
+        return value.asString();
     }
 
-    std::optional<std::string> GetRawStringValueFromJsonNode(const web::json::value& node, const utility::string_t& keyName)
+    std::optional<std::string> GetRawStringValueFromJsonNode(const Json::Value& node, std::string_view keyName)
     {
-        std::optional<std::reference_wrapper<const web::json::value>> jsonValue = GetJsonValueFromNode(node, keyName);
+        std::optional<std::reference_wrapper<const Json::Value>> jsonValue = GetJsonValueFromNode(node, keyName);
 
         if (jsonValue)
         {
@@ -121,48 +124,24 @@ namespace AppInstaller::JSON
         return {};
     }
 
-    std::optional<std::wstring> GetWideStringValueFromJsonNode(const web::json::value& node, const utility::string_t& keyName)
+    std::optional<std::string> GetRawStringValueFromJsonNode(const Json::Value& node, std::wstring_view keyName)
     {
-        std::optional<std::reference_wrapper<const web::json::value>> jsonValue = GetJsonValueFromNode(node, keyName);
-
-        if (jsonValue)
-        {
-            return GetWideStringValueFromJsonValue(jsonValue.value().get());
-        }
-
-        return {};
+        return GetRawStringValueFromJsonNode(node, NormalizeJsonKey(keyName));
     }
 
-    std::optional<int> GetRawIntValueFromJsonValue(const web::json::value& value)
+    std::optional<int> GetRawIntValueFromJsonValue(const Json::Value& value)
     {
-        if (value.is_null() || !value.is_integer())
+        if (value.isNull() || !value.isInt())
         {
             return {};
         }
 
-        return value.as_integer();
+        return value.asInt();
     }
 
-    std::optional<uint64_t> GetRawUInt64ValueFromJsonValue(const web::json::value& value)
+    std::optional<int> GetRawIntValueFromJsonNode(const Json::Value& node, std::string_view keyName)
     {
-        if (value.is_null() || !value.is_number())
-        {
-            return {};
-        }
-
-        const web::json::number& valueNumber = value.as_number();
-
-        if (!valueNumber.is_uint64())
-        {
-            return {};
-        }
-
-        return valueNumber.to_uint64();
-    }
-
-    std::optional<int> GetRawIntValueFromJsonNode(const web::json::value& node, const utility::string_t& keyName)
-    {
-        std::optional<std::reference_wrapper<const web::json::value>> jsonValue = GetJsonValueFromNode(node, keyName);
+        std::optional<std::reference_wrapper<const Json::Value>> jsonValue = GetJsonValueFromNode(node, keyName);
 
         if (jsonValue)
         {
@@ -172,9 +151,24 @@ namespace AppInstaller::JSON
         return {};
     }
 
-    std::optional<uint64_t> GetRawUInt64ValueFromJsonNode(const web::json::value& node, const utility::string_t& keyName)
+    std::optional<int> GetRawIntValueFromJsonNode(const Json::Value& node, std::wstring_view keyName)
     {
-        std::optional<std::reference_wrapper<const web::json::value>> jsonValue = GetJsonValueFromNode(node, keyName);
+        return GetRawIntValueFromJsonNode(node, NormalizeJsonKey(keyName));
+    }
+
+    std::optional<uint64_t> GetRawUInt64ValueFromJsonValue(const Json::Value& value)
+    {
+        if (value.isNull() || !value.isUInt64())
+        {
+            return {};
+        }
+
+        return value.asUInt64();
+    }
+
+    std::optional<uint64_t> GetRawUInt64ValueFromJsonNode(const Json::Value& node, std::string_view keyName)
+    {
+        std::optional<std::reference_wrapper<const Json::Value>> jsonValue = GetJsonValueFromNode(node, keyName);
 
         if (jsonValue)
         {
@@ -184,19 +178,24 @@ namespace AppInstaller::JSON
         return {};
     }
 
-    std::optional<bool> GetRawBoolValueFromJsonValue(const web::json::value& value)
+    std::optional<uint64_t> GetRawUInt64ValueFromJsonNode(const Json::Value& node, std::wstring_view keyName)
     {
-        if (value.is_null() || !value.is_boolean())
+        return GetRawUInt64ValueFromJsonNode(node, NormalizeJsonKey(keyName));
+    }
+
+    std::optional<bool> GetRawBoolValueFromJsonValue(const Json::Value& value)
+    {
+        if (value.isNull() || !value.isBool())
         {
             return {};
         }
 
-        return value.as_bool();
+        return value.asBool();
     }
 
-    std::optional<bool> GetRawBoolValueFromJsonNode(const web::json::value& node, const utility::string_t& keyName)
+    std::optional<bool> GetRawBoolValueFromJsonNode(const Json::Value& node, std::string_view keyName)
     {
-        std::optional<std::reference_wrapper<const web::json::value>> jsonValue = GetJsonValueFromNode(node, keyName);
+        std::optional<std::reference_wrapper<const Json::Value>> jsonValue = GetJsonValueFromNode(node, keyName);
 
         if (jsonValue)
         {
@@ -206,22 +205,31 @@ namespace AppInstaller::JSON
         return {};
     }
 
-    std::optional<std::reference_wrapper<const web::json::array>> GetRawJsonArrayFromJsonNode(const web::json::value& node, const utility::string_t& keyName)
+    std::optional<bool> GetRawBoolValueFromJsonNode(const Json::Value& node, std::wstring_view keyName)
     {
-        std::optional<std::reference_wrapper<const web::json::value>> jsonValue = GetJsonValueFromNode(node, keyName);
+        return GetRawBoolValueFromJsonNode(node, NormalizeJsonKey(keyName));
+    }
 
-        if (!jsonValue || !jsonValue.value().get().is_array())
+    std::optional<std::reference_wrapper<const Json::Value>> GetRawJsonArrayFromJsonNode(const Json::Value& node, std::string_view keyName)
+    {
+        std::optional<std::reference_wrapper<const Json::Value>> jsonValue = GetJsonValueFromNode(node, keyName);
+
+        if (!jsonValue || !jsonValue.value().get().isArray())
         {
             return {};
         }
 
-        return jsonValue.value().get().as_array();
+        return jsonValue.value();
     }
 
-    std::vector<std::string> GetRawStringArrayFromJsonNode(
-        const web::json::value& node, const utility::string_t& keyName)
+    std::optional<std::reference_wrapper<const Json::Value>> GetRawJsonArrayFromJsonNode(const Json::Value& node, std::wstring_view keyName)
     {
-        std::optional<std::reference_wrapper<const web::json::array>> arrayValue = GetRawJsonArrayFromJsonNode(node, keyName);
+        return GetRawJsonArrayFromJsonNode(node, NormalizeJsonKey(keyName));
+    }
+
+    std::vector<std::string> GetRawStringArrayFromJsonNode(const Json::Value& node, std::string_view keyName)
+    {
+        std::optional<std::reference_wrapper<const Json::Value>> arrayValue = GetRawJsonArrayFromJsonNode(node, keyName);
 
         std::vector<std::string> result;
         if (!arrayValue)
@@ -229,7 +237,7 @@ namespace AppInstaller::JSON
             return result;
         }
 
-        for (auto& value : arrayValue.value().get())
+        for (auto const& value : arrayValue.value().get())
         {
             std::optional<std::string> item = GetRawStringValueFromJsonValue(value);
             if (item)
@@ -241,10 +249,14 @@ namespace AppInstaller::JSON
         return result;
     }
 
-    std::set<std::string> GetRawStringSetFromJsonNode(
-        const web::json::value& node, const utility::string_t& keyName)
+    std::vector<std::string> GetRawStringArrayFromJsonNode(const Json::Value& node, std::wstring_view keyName)
     {
-        std::optional<std::reference_wrapper<const web::json::array>> arrayValue = GetRawJsonArrayFromJsonNode(node, keyName);
+        return GetRawStringArrayFromJsonNode(node, NormalizeJsonKey(keyName));
+    }
+
+    std::set<std::string> GetRawStringSetFromJsonNode(const Json::Value& node, std::string_view keyName)
+    {
+        std::optional<std::reference_wrapper<const Json::Value>> arrayValue = GetRawJsonArrayFromJsonNode(node, keyName);
 
         std::set<std::string> result;
         if (!arrayValue)
@@ -252,7 +264,7 @@ namespace AppInstaller::JSON
             return result;
         }
 
-        for (auto& value : arrayValue.value().get())
+        for (auto const& value : arrayValue.value().get())
         {
             std::optional<std::string> item = GetRawStringValueFromJsonValue(value);
             if (item)
@@ -262,6 +274,21 @@ namespace AppInstaller::JSON
         }
 
         return result;
+    }
+
+    std::set<std::string> GetRawStringSetFromJsonNode(const Json::Value& node, std::wstring_view keyName)
+    {
+        return GetRawStringSetFromJsonNode(node, NormalizeJsonKey(keyName));
+    }
+
+    std::wstring GetUtilityString(std::string_view nodeName)
+    {
+        return Utility::ConvertToUTF16(nodeName);
+    }
+
+    Json::Value GetStringValue(std::string_view value)
+    {
+        return Json::Value(std::string{ value });
     }
 
     std::string Base64Encode(const std::vector<BYTE>& input)
@@ -303,8 +330,6 @@ namespace AppInstaller::JSON
 
         return result;
     }
-#endif
-
     bool IsValidNonEmptyStringValue(std::optional<std::string>& value)
     {
         if (Utility::IsEmptyOrWhitespace(value.value_or("")))

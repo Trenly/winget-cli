@@ -24,7 +24,7 @@ namespace AppInstaller::Repository::Rest::Schema
         ~SearchRequestComposer();
 
         // Create search request rest call body from a given SearchRequest
-        web::json::value Serialize(const AppInstaller::Repository::SearchRequest& searchRequest) const;
+        Json::Value Serialize(const AppInstaller::Repository::SearchRequest& searchRequest) const;
 
     private:
         struct impl;

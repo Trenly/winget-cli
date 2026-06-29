@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 #include "pch.h"
 #include "ManifestDeserializer.h"
@@ -14,7 +14,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_6::Json
         constexpr std::string_view DownloadCommandProhibited = "DownloadCommandProhibited"sv;
     }
 
-    std::optional<Manifest::ManifestInstaller> ManifestDeserializer::DeserializeInstaller(const web::json::value& installerJsonObject) const
+    std::optional<Manifest::ManifestInstaller> ManifestDeserializer::DeserializeInstaller(const ::Json::Value& installerJsonObject) const
     {
         auto result = V1_5::Json::ManifestDeserializer::DeserializeInstaller(installerJsonObject);
 

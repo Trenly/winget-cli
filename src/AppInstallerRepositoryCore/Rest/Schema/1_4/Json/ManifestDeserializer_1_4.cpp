@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 #include "pch.h"
 #include "ManifestDeserializer.h"
@@ -71,16 +71,16 @@ namespace AppInstaller::Repository::Rest::Schema::V1_4::Json
         return V1_1::Json::ManifestDeserializer::ConvertToExpectedReturnCodeEnum(inStrLower);
     }
 
-    Manifest::ManifestInstaller::ExpectedReturnCodeInfo ManifestDeserializer::DeserializeExpectedReturnCodeInfo(const web::json::value& expectedReturnCodeJsonObject) const
+    Manifest::ManifestInstaller::ExpectedReturnCodeInfo ManifestDeserializer::DeserializeExpectedReturnCodeInfo(const ::Json::Value& expectedReturnCodeJsonObject) const
     {
         auto result = V1_1::Json::ManifestDeserializer::DeserializeExpectedReturnCodeInfo(expectedReturnCodeJsonObject);
         result.ReturnResponseUrl = JSON::GetRawStringValueFromJsonNode(expectedReturnCodeJsonObject, JSON::GetUtilityString(ReturnResponseUrl)).value_or("");
         return result;
     }
 
-    std::optional<Manifest::InstallationMetadataInfo> ManifestDeserializer::DeserializeInstallationMetadata(const web::json::value& installationMetadataJsonObject) const
+    std::optional<Manifest::InstallationMetadataInfo> ManifestDeserializer::DeserializeInstallationMetadata(const ::Json::Value& installationMetadataJsonObject) const
     {
-        if (installationMetadataJsonObject.is_null() || !installationMetadataJsonObject.is_object())
+        if (installationMetadataJsonObject.isNull() || !installationMetadataJsonObject.isObject())
         {
             return {};
         }
@@ -124,7 +124,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_4::Json
         return installationMetadata;
     }
 
-    std::optional<Manifest::ManifestInstaller> ManifestDeserializer::DeserializeInstaller(const web::json::value& installerJsonObject) const
+    std::optional<Manifest::ManifestInstaller> ManifestDeserializer::DeserializeInstaller(const ::Json::Value& installerJsonObject) const
     {
         auto result = V1_1::Json::ManifestDeserializer::DeserializeInstaller(installerJsonObject);
 
@@ -187,7 +187,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_4::Json
         return result;
     }
 
-    std::optional<Manifest::ManifestLocalization> ManifestDeserializer::DeserializeLocale(const web::json::value& localeJsonObject) const
+    std::optional<Manifest::ManifestLocalization> ManifestDeserializer::DeserializeLocale(const ::Json::Value& localeJsonObject) const
     {
         auto result = V1_1::Json::ManifestDeserializer::DeserializeLocale(localeJsonObject);
 

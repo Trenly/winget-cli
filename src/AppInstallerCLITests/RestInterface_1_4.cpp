@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 #include "pch.h"
 #include "TestCommon.h"
@@ -35,10 +35,9 @@ namespace
 
     struct GoodManifest_AllFields
     {
-        utility::string_t GetSampleManifest_AllFields()
+        std::wstring GetSampleManifest_AllFields()
         {
-            return _XPLATSTR(
-                R"delimiter(
+            return LR"delimiter(
         {
           "Data": {
             "PackageIdentifier": "Foo.Bar",
@@ -217,7 +216,7 @@ namespace
             ]
           },
           "ContinuationToken": "abcd"
-        })delimiter");
+        })delimiter";
         }
 
         void VerifyLocalizations_AllFields(const Manifest& manifest)
@@ -360,8 +359,8 @@ namespace
 TEST_CASE("GetManifests_GoodResponse_V1_4", "[RestSource][Interface_1_4]")
 {
     GoodManifest_AllFields sampleManifest;
-    utility::string_t sample = sampleManifest.GetSampleManifest_AllFields();
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, std::move(sample)) };
+    std::wstring sample = sampleManifest.GetSampleManifest_AllFields();
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, std::move(sample)) };
     Interface v1_4{ TestRestUriString, std::move(helper), {} };
     std::vector<Manifest> manifests = v1_4.GetManifests("Foo.Bar");
     REQUIRE(manifests.size() == 1);
@@ -379,8 +378,7 @@ TEST_CASE("GetManifests_GoodResponse_V1_4", "[RestSource][Interface_1_4]")
 
 TEST_CASE("Search_GoodResponse_V1_4", "[RestSource][Interface_1_4]")
 {
-    utility::string_t sample = _XPLATSTR(
-        R"delimiter({
+    std::wstring sample = LR"delimiter({
             "Data" : [{
               "PackageIdentifier": "git.package",
               "PackageName": "package",
@@ -402,9 +400,9 @@ TEST_CASE("Search_GoodResponse_V1_4", "[RestSource][Interface_1_4]")
                 ]
               }]
             }]
-        })delimiter");
+        })delimiter";
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, std::move(sample)) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, std::move(sample)) };
     Interface v1_4{ TestRestUriString, std::move(helper), {} };
     Schema::IRestClient::SearchResult searchResponse = v1_4.Search({});
     REQUIRE(searchResponse.Matches.size() == 1);

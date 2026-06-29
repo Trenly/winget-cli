@@ -86,7 +86,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0::Json
         void TryParseInstallerSwitchField(
             std::map<InstallerSwitchType, Utility::NormalizedString>& installerSwitches,
             InstallerSwitchType switchType,
-            const web::json::value& switchesJsonObject,
+            const ::Json::Value& switchesJsonObject,
             std::string_view switchJsonFieldName)
         {
             auto value = JSON::GetRawStringValueFromJsonNode(switchesJsonObject, JSON::GetUtilityString(switchJsonFieldName));
@@ -98,9 +98,9 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0::Json
         }
     }
 
-    std::vector<Manifest::Manifest> ManifestDeserializer::Deserialize(const web::json::value& responseJsonObject) const
+    std::vector<Manifest::Manifest> ManifestDeserializer::Deserialize(const ::Json::Value& responseJsonObject) const
     {
-        if (responseJsonObject.is_null())
+        if (responseJsonObject.isNull())
         {
             AICLI_LOG(Repo, Error, << "Missing json object.");
             THROW_HR(APPINSTALLER_CLI_ERROR_RESTSOURCE_INVALID_DATA);
@@ -108,10 +108,10 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0::Json
 
         try
         {
-            std::optional<std::reference_wrapper<const web::json::value>> manifestObject =
+            std::optional<std::reference_wrapper<const ::Json::Value>> manifestObject =
                 JSON::GetJsonValueFromNode(responseJsonObject, JSON::GetUtilityString(Data));
 
-            if (!manifestObject || manifestObject.value().get().is_null())
+            if (!manifestObject || manifestObject.value().get().isNull())
             {
                 AICLI_LOG(Repo, Verbose, << "No manifest results returned.");
                 return {};
@@ -137,9 +137,9 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0::Json
         THROW_HR(APPINSTALLER_CLI_ERROR_RESTSOURCE_INVALID_DATA);
     }
 
-    std::vector<Manifest::Manifest> ManifestDeserializer::DeserializeData(const web::json::value& dataJsonObject) const
+    std::vector<Manifest::Manifest> ManifestDeserializer::DeserializeData(const ::Json::Value& dataJsonObject) const
     {
-        THROW_HR_IF(E_INVALIDARG, dataJsonObject.is_null());
+        THROW_HR_IF(E_INVALIDARG, dataJsonObject.isNull());
 
         std::vector<Manifest::Manifest> manifests;
 
@@ -150,7 +150,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0::Json
             THROW_HR(APPINSTALLER_CLI_ERROR_RESTSOURCE_INVALID_DATA);
         }
 
-        std::optional<std::reference_wrapper<const web::json::array>> versions = JSON::GetRawJsonArrayFromJsonNode(dataJsonObject, JSON::GetUtilityString(Versions));
+        std::optional<std::reference_wrapper<const ::Json::Value>> versions = JSON::GetRawJsonArrayFromJsonNode(dataJsonObject, JSON::GetUtilityString(Versions));
         if (!versions || versions.value().get().size() == 0)
         {
             AICLI_LOG(Repo, Error, << "Missing versions in package: " << id.value());
@@ -176,7 +176,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0::Json
             manifest.Channel = JSON::GetRawStringValueFromJsonNode(versionItem, JSON::GetUtilityString(Channel)).value_or("");
 
             // Default locale
-            std::optional<std::reference_wrapper<const web::json::value>> defaultLocale =
+            std::optional<std::reference_wrapper<const ::Json::Value>> defaultLocale =
                 JSON::GetJsonValueFromNode(versionItem, JSON::GetUtilityString(DefaultLocale));
             if (!defaultLocale)
             {
@@ -207,7 +207,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0::Json
             }
 
             // Installers
-            std::optional<std::reference_wrapper<const web::json::array>> installers = JSON::GetRawJsonArrayFromJsonNode(versionItem, JSON::GetUtilityString(Installers));
+            std::optional<std::reference_wrapper<const ::Json::Value>> installers = JSON::GetRawJsonArrayFromJsonNode(versionItem, JSON::GetUtilityString(Installers));
             if (!installers || installers.value().get().size() == 0)
             {
                 AICLI_LOG(Repo, Error, << "Missing installers in package: " << manifest.Id);
@@ -240,7 +240,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0::Json
             }
 
             // Other locales
-            std::optional<std::reference_wrapper<const web::json::array>> locales = JSON::GetRawJsonArrayFromJsonNode(versionItem, JSON::GetUtilityString(Locales));
+            std::optional<std::reference_wrapper<const ::Json::Value>> locales = JSON::GetRawJsonArrayFromJsonNode(versionItem, JSON::GetUtilityString(Locales));
             if (locales)
             {
                 for (auto& locale : locales.value().get())
@@ -259,19 +259,19 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0::Json
         return manifests;
     }
 
-    std::vector<Manifest::AppsAndFeaturesEntry> ManifestDeserializer::DeserializeAppsAndFeaturesEntries(const web::json::array&) const
+    std::vector<Manifest::AppsAndFeaturesEntry> ManifestDeserializer::DeserializeAppsAndFeaturesEntries(const ::Json::Value&) const
     {
         return {};
     }
 
-    std::optional<Manifest::InstallationMetadataInfo> ManifestDeserializer::DeserializeInstallationMetadata(const web::json::value&) const
+    std::optional<Manifest::InstallationMetadataInfo> ManifestDeserializer::DeserializeInstallationMetadata(const ::Json::Value&) const
     {
         return {};
     }
 
-    std::optional<Manifest::ManifestLocalization> ManifestDeserializer::DeserializeLocale(const web::json::value& localeJsonObject) const
+    std::optional<Manifest::ManifestLocalization> ManifestDeserializer::DeserializeLocale(const ::Json::Value& localeJsonObject) const
     {
-        if (localeJsonObject.is_null())
+        if (localeJsonObject.isNull())
         {
             return {};
         }
@@ -308,9 +308,9 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0::Json
         return locale;
     }
 
-    std::optional<Manifest::ManifestInstaller> ManifestDeserializer::DeserializeInstaller(const web::json::value& installerJsonObject) const
+    std::optional<Manifest::ManifestInstaller> ManifestDeserializer::DeserializeInstaller(const ::Json::Value& installerJsonObject) const
     {
-        if (installerJsonObject.is_null())
+        if (installerJsonObject.isNull())
         {
             return {};
         }
@@ -343,7 +343,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0::Json
         installer.Locale = JSON::GetRawStringValueFromJsonNode(installerJsonObject, JSON::GetUtilityString(InstallerLocale)).value_or("");
 
         // platform
-        std::optional<std::reference_wrapper<const web::json::array>> platforms = JSON::GetRawJsonArrayFromJsonNode(installerJsonObject, JSON::GetUtilityString(Platform));
+        std::optional<std::reference_wrapper<const ::Json::Value>> platforms = JSON::GetRawJsonArrayFromJsonNode(installerJsonObject, JSON::GetUtilityString(Platform));
         if (platforms)
         {
             for (auto& platform : platforms.value().get())
@@ -370,7 +370,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0::Json
         }
 
         // Install modes
-        std::optional<std::reference_wrapper<const web::json::array>> installModes = JSON::GetRawJsonArrayFromJsonNode(installerJsonObject, JSON::GetUtilityString(InstallModes));
+        std::optional<std::reference_wrapper<const ::Json::Value>> installModes = JSON::GetRawJsonArrayFromJsonNode(installerJsonObject, JSON::GetUtilityString(InstallModes));
         if (installModes)
         {
             for (auto& mode : installModes.value().get())
@@ -384,7 +384,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0::Json
         }
 
         // Installer Switches
-        std::optional<std::reference_wrapper<const web::json::value>> switches =
+        std::optional<std::reference_wrapper<const ::Json::Value>> switches =
             JSON::GetJsonValueFromNode(installerJsonObject, JSON::GetUtilityString(InstallerSwitches));
         if (switches)
         {
@@ -392,7 +392,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0::Json
         }
 
         // Installer SuccessCodes
-        std::optional<std::reference_wrapper<const web::json::array>> installSuccessCodes = JSON::GetRawJsonArrayFromJsonNode(installerJsonObject, JSON::GetUtilityString(InstallerSuccessCodes));
+        std::optional<std::reference_wrapper<const ::Json::Value>> installSuccessCodes = JSON::GetRawJsonArrayFromJsonNode(installerJsonObject, JSON::GetUtilityString(InstallerSuccessCodes));
         if (installSuccessCodes)
         {
             for (auto& code : installSuccessCodes.value().get())
@@ -416,7 +416,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0::Json
         installer.FileExtensions = ConvertToManifestStringArray(JSON::GetRawStringArrayFromJsonNode(installerJsonObject, JSON::GetUtilityString(FileExtensions)));
 
         // Dependencies
-        std::optional<std::reference_wrapper<const web::json::value>> dependenciesObject =
+        std::optional<std::reference_wrapper<const ::Json::Value>> dependenciesObject =
             JSON::GetJsonValueFromNode(installerJsonObject, JSON::GetUtilityString(Dependencies));
         if (dependenciesObject)
         {
@@ -435,7 +435,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0::Json
         return installer;
     }
 
-    std::map<Manifest::InstallerSwitchType, Manifest::string_t> ManifestDeserializer::DeserializeInstallerSwitches(const web::json::value& installerSwitchesJsonObject) const
+    std::map<Manifest::InstallerSwitchType, Manifest::string_t> ManifestDeserializer::DeserializeInstallerSwitches(const ::Json::Value& installerSwitchesJsonObject) const
     {
         std::map<Manifest::InstallerSwitchType, Manifest::string_t> installerSwitches;
 
@@ -450,9 +450,9 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0::Json
         return installerSwitches;
     }
 
-    std::optional<Manifest::DependencyList> ManifestDeserializer::DeserializeDependency(const web::json::value& dependenciesObject) const
+    std::optional<Manifest::DependencyList> ManifestDeserializer::DeserializeDependency(const ::Json::Value& dependenciesObject) const
     {
-        if (dependenciesObject.is_null())
+        if (dependenciesObject.isNull())
         {
             return {};
         }
@@ -478,7 +478,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0::Json
         };
 
         // Package Dependencies
-        std::optional<std::reference_wrapper<const web::json::array>> packageDependencies = JSON::GetRawJsonArrayFromJsonNode(dependenciesObject, JSON::GetUtilityString(PackageDependencies));
+        std::optional<std::reference_wrapper<const ::Json::Value>> packageDependencies = JSON::GetRawJsonArrayFromJsonNode(dependenciesObject, JSON::GetUtilityString(PackageDependencies));
         if (packageDependencies)
         {
             for (auto& packageDependency : packageDependencies.value().get())

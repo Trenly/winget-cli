@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 #pragma once
 #include "Rest/Schema/IRestClient.h"
+#include <json/json.h>
 
 namespace AppInstaller::Repository::Rest::Schema
 {
@@ -9,9 +10,9 @@ namespace AppInstaller::Repository::Rest::Schema
     struct InformationResponseDeserializer
     {
         // Gets the information model for given response
-        IRestClient::Information Deserialize(const web::json::value& dataObject) const;
+        IRestClient::Information Deserialize(const Json::Value& dataObject) const;
 
     protected:
-        std::optional<IRestClient::Information> DeserializeInformation(const web::json::value& dataObject) const;
+        std::optional<IRestClient::Information> DeserializeInformation(const Json::Value& dataObject) const;
     };
 }

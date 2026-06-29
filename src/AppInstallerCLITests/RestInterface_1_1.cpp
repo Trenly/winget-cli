@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 #include "pch.h"
 #include "TestCommon.h"
@@ -35,10 +35,9 @@ namespace
 
     struct GoodManifest_AllFields
     {
-        utility::string_t GetSampleManifest_AllFields()
+        std::wstring GetSampleManifest_AllFields()
         {
-            return _XPLATSTR(
-                R"delimiter(
+            return LR"delimiter(
         {
           "Data": {
             "PackageIdentifier": "Foo.Bar",
@@ -187,7 +186,7 @@ namespace
             ]
           },
           "ContinuationToken": "abcd"
-        })delimiter");
+        })delimiter";
         }
 
         void VerifyLocalizations_AllFields(const Manifest& manifest)
@@ -304,13 +303,12 @@ namespace
 
 TEST_CASE("Search_BadResponse_UnsupportedPackageMatchFields", "[RestSource][Interface_1_1]")
 {
-    utility::string_t sample = _XPLATSTR(
-        R"delimiter({
+    std::wstring sample = LR"delimiter({
             "Data" : [],
             "UnsupportedPackageMatchFields" : [ "Moniker" ]
-        })delimiter");
+        })delimiter";
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, std::move(sample)) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, std::move(sample)) };
     Interface v1_1{ TestRestUriString, std::move(helper), GetTestSourceInformation(), {} };
     AppInstaller::Repository::SearchRequest request;
     PackageMatchFilter filter{ PackageMatchField::Name, MatchType::Exact, "Foo" };
@@ -320,13 +318,12 @@ TEST_CASE("Search_BadResponse_UnsupportedPackageMatchFields", "[RestSource][Inte
 
 TEST_CASE("Search_BadResponse_RequiredPackageMatchFields", "[RestSource][Interface_1_1]")
 {
-    utility::string_t sample = _XPLATSTR(
-        R"delimiter({
+    std::wstring sample = LR"delimiter({
             "Data" : [],
             "RequiredPackageMatchFields" : [ "Moniker" ]
-        })delimiter");
+        })delimiter";
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, std::move(sample)) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, std::move(sample)) };
     Interface v1_1{ TestRestUriString, std::move(helper), GetTestSourceInformation(), {} };
     AppInstaller::Repository::SearchRequest request;
     PackageMatchFilter filter{ PackageMatchField::Name, MatchType::Exact, "Foo" };
@@ -336,34 +333,31 @@ TEST_CASE("Search_BadResponse_RequiredPackageMatchFields", "[RestSource][Interfa
 
 TEST_CASE("GetManifests_BadResponse_UnsupportedQueryParameters", "[RestSource][Interface_1_1]")
 {
-    utility::string_t sample = _XPLATSTR(
-        R"delimiter({
+    std::wstring sample = LR"delimiter({
             "Data" : null,
             "UnsupportedQueryParameters" : [ "Channel" ]
-        })delimiter");
+        })delimiter";
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, std::move(sample)) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, std::move(sample)) };
     Interface v1_1{ TestRestUriString, std::move(helper), GetTestSourceInformation(), {} };
     REQUIRE_THROWS_HR(v1_1.GetManifests("Foo"), APPINSTALLER_CLI_ERROR_UNSUPPORTED_SOURCE_REQUEST);
 }
 
 TEST_CASE("GetManifests_BadResponse_RequiredQueryParameters", "[RestSource][Interface_1_1]")
 {
-    utility::string_t sample = _XPLATSTR(
-        R"delimiter({
+    std::wstring sample = LR"delimiter({
             "Data" : null,
             "RequiredQueryParameters" : [ "Version" ]
-        })delimiter");
+        })delimiter";
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, std::move(sample)) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, std::move(sample)) };
     Interface v1_1{ TestRestUriString, std::move(helper), GetTestSourceInformation(), {} };
     REQUIRE_THROWS_HR(v1_1.GetManifests("Foo"), APPINSTALLER_CLI_ERROR_UNSUPPORTED_SOURCE_REQUEST);
 }
 
 TEST_CASE("Search_BadRequest_UnsupportedPackageMatchFields", "[RestSource][Interface_1_1]")
 {
-    utility::string_t sample = _XPLATSTR(
-        R"delimiter({
+    std::wstring sample = LR"delimiter({
             "Data" : [
                {
               "PackageIdentifier": "git.package",
@@ -373,9 +367,9 @@ TEST_CASE("Search_BadRequest_UnsupportedPackageMatchFields", "[RestSource][Inter
                 {   "PackageVersion": "1.0.0" },
                 {   "PackageVersion": "2.0.0" }]
             }]
-        })delimiter");
+        })delimiter";
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, std::move(sample)) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, std::move(sample)) };
     Interface v1_1{ TestRestUriString, std::move(helper), GetTestSourceInformation(), {} };
     AppInstaller::Repository::SearchRequest request;
     PackageMatchFilter filter{ PackageMatchField::Moniker, MatchType::Exact, "Foo" };
@@ -385,8 +379,7 @@ TEST_CASE("Search_BadRequest_UnsupportedPackageMatchFields", "[RestSource][Inter
 
 TEST_CASE("Search_GoodRequest_OnlyMarketRequired", "[RestSource][Interface_1_1]")
 {
-    utility::string_t sample = _XPLATSTR(
-        R"delimiter({
+    std::wstring sample = LR"delimiter({
             "Data" : [
                {
               "PackageIdentifier": "git.package",
@@ -396,9 +389,9 @@ TEST_CASE("Search_GoodRequest_OnlyMarketRequired", "[RestSource][Interface_1_1]"
                 {   "PackageVersion": "1.0.0" },
                 {   "PackageVersion": "2.0.0" }]
             }]
-        })delimiter");
+        })delimiter";
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, std::move(sample)) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, std::move(sample)) };
     Interface v1_1{ TestRestUriString, std::move(helper), GetTestSourceInformation(), {} };
     AppInstaller::Repository::SearchRequest request;
     PackageMatchFilter filter{ PackageMatchField::Name, MatchType::Exact, "Foo" };
@@ -416,8 +409,7 @@ TEST_CASE("Search_GoodRequest_OnlyMarketRequired", "[RestSource][Interface_1_1]"
 
 TEST_CASE("GetManifests_BadRequest_UnsupportedQueryParameters", "[RestSource][Interface_1_1]")
 {
-    utility::string_t sample = _XPLATSTR(
-        R"delimiter({
+    std::wstring sample = LR"delimiter({
         "Data": {
             "PackageIdentifier": "Foo.Bar",
             "Versions": [
@@ -441,17 +433,16 @@ TEST_CASE("GetManifests_BadRequest_UnsupportedQueryParameters", "[RestSource][In
                 }
             ]
         }
-    })delimiter");
+    })delimiter";
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, std::move(sample)) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, std::move(sample)) };
     Interface v1_1{ TestRestUriString, std::move(helper), GetTestSourceInformation(), {} };
     REQUIRE_THROWS_HR(v1_1.GetManifestByVersion("Foo", "1.0", "beta"), APPINSTALLER_CLI_ERROR_UNSUPPORTED_SOURCE_REQUEST);
 }
 
 TEST_CASE("GetManifests_GoodRequest_OnlyMarketRequired", "[RestSource][Interface_1_1]")
 {
-    utility::string_t sample = _XPLATSTR(
-        R"delimiter({
+    std::wstring sample = LR"delimiter({
         "Data": {
             "PackageIdentifier": "Foo.Bar",
             "Versions": [
@@ -475,11 +466,11 @@ TEST_CASE("GetManifests_GoodRequest_OnlyMarketRequired", "[RestSource][Interface
                 }
             ]
         }
-    })delimiter");
+    })delimiter";
 
     IRestClient::Information info = GetTestSourceInformation();
     info.UnsupportedQueryParameters.clear();
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, std::move(sample)) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, std::move(sample)) };
     Interface v1_1{ TestRestUriString, std::move(helper), info, {} };
     auto manifestResult = v1_1.GetManifestByVersion("Foo", "5.0.0", "");
     REQUIRE(manifestResult.has_value());
@@ -500,8 +491,7 @@ TEST_CASE("GetManifests_GoodRequest_OnlyMarketRequired", "[RestSource][Interface
 
 TEST_CASE("GetManifests_GoodResponse_MSStoreType", "[RestSource][Interface_1_1]")
 {
-    utility::string_t msstoreInstallerResponse = _XPLATSTR(
-        R"delimiter({
+    std::wstring msstoreInstallerResponse = LR"delimiter({
         "Data": {
             "PackageIdentifier": "Foo.Bar",
             "Versions": [
@@ -524,9 +514,9 @@ TEST_CASE("GetManifests_GoodResponse_MSStoreType", "[RestSource][Interface_1_1]"
                 }
             ]
         }
-    })delimiter");
+    })delimiter";
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, std::move(msstoreInstallerResponse)) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, std::move(msstoreInstallerResponse)) };
     Interface v1_1{ TestRestUriString, std::move(helper), GetTestSourceInformation(), {} };
     std::vector<Manifest> manifests = v1_1.GetManifests("Foo.Bar");
     REQUIRE(manifests.size() == 1);
@@ -541,8 +531,8 @@ TEST_CASE("GetManifests_GoodResponse_MSStoreType", "[RestSource][Interface_1_1]"
 TEST_CASE("GetManifests_GoodResponse_V1_1", "[RestSource][Interface_1_1]")
 {
     GoodManifest_AllFields sampleManifest;
-    utility::string_t sample = sampleManifest.GetSampleManifest_AllFields();
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, std::move(sample)) };
+    std::wstring sample = sampleManifest.GetSampleManifest_AllFields();
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, std::move(sample)) };
     Interface v1_1{ TestRestUriString, std::move(helper), {} };
     std::vector<Manifest> manifests = v1_1.GetManifests("Foo.Bar");
     REQUIRE(manifests.size() == 1);

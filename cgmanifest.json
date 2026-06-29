@@ -5,15 +5,6 @@
       "component": {
         "type": "git",
         "git": {
-          "repositoryUrl": "https://github.com/microsoft/cpprestsdk.git",
-          "commitHash": "411a109150b270f23c8c97fa4ec9a0a4a98cdecf"
-        }
-      }
-    },
-    {
-      "component": {
-        "type": "git",
-        "git": {
           "repositoryUrl": "https://github.com/ronomon/pure.git",
           "commitHash": "fd54913e65338e678440ae66b3b5022ab23b761b"
         }

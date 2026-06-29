@@ -149,6 +149,9 @@
     <ClInclude Include="Public\winget\PathTree.h">
       <Filter>Public\winget</Filter>
     </ClInclude>
+    <ClInclude Include="Public\winget\WebRequest.h">
+      <Filter>Public\winget</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -239,6 +242,9 @@
       <Filter>SQLite</Filter>
     </ClCompile>
     <ClCompile Include="COMStaticStorage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="WebRequest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

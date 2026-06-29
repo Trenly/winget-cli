@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 #include "pch.h"
 #include "TestCommon.h"
-#include "cpprest/json.h"
 #include <winget/Rest.h>
 
 using namespace AppInstaller::Rest;
@@ -11,6 +10,7 @@ TEST_CASE("ValidateAndGetRestAPIBaseUri", "[RestSource]")
 {
     REQUIRE(GetRestAPIBaseUri("https://restsource.azurewebsites.net/api/   ") == L"https://restsource.azurewebsites.net/api");
     REQUIRE(GetRestAPIBaseUri("http://rest_sourc e.azurewebsites.net/api") == L"http://rest_sourc%20e.azurewebsites.net/api");
+    REQUIRE(GetRestAPIBaseUri("http://rest sourc e.azurewebsites.net/api path?q=value with space") == L"http://rest%20sourc%20e.azurewebsites.net/api%20path?q=value%20with%20space");
     REQUIRE(GetRestAPIBaseUri("http://restsource.azurewebsites.net/v1.0/%v1") == L"http://restsource.azurewebsites.net/v1.0/%25v1");
 }
 
@@ -29,7 +29,7 @@ TEST_CASE("AppendPathToUri", "[RestSource]")
 
 TEST_CASE("AppendQueryParamsToUri", "[RestSource]")
 {
-    utility::string_t url = L"http://restsource.azurewebsites.net/api";
+    std::wstring url = L"http://restsource.azurewebsites.net/api";
     std::map<std::string_view, std::string> queryParams;
     queryParams.emplace("Version", "1.0 .0");
     queryParams.emplace("Channel", "beta+");

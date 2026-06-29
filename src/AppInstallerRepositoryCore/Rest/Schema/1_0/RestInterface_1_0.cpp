@@ -8,6 +8,9 @@
 #include <winget/ManifestJSONParser.h>
 #include <winget/ManifestValidation.h>
 #include <winget/Rest.h>
+#include <winget/RestHelpers.h>
+#include <winget/WebRequest.h>
+#include <winhttp.h>
 #include "Rest/Schema/CommonRestConstants.h"
 #include "Rest/Schema/SearchResponseParser.h"
 #include "Rest/Schema/SearchRequestComposer.h"
@@ -22,59 +25,57 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0
         constexpr std::string_view VersionQueryParam = "Version"sv;
         constexpr std::string_view ChannelQueryParam = "Channel"sv;
 
-        utility::string_t GetSearchEndpoint(const std::string& restApiUri)
+        std::wstring GetRestAPIBaseUri(std::string restApiUri)
         {
-            return AppInstaller::Rest::AppendPathToUri(AppInstaller::JSON::GetUtilityString(restApiUri), AppInstaller::JSON::GetUtilityString(ManifestSearchPostEndpoint));
+            return ::AppInstaller::Rest::GetRestAPIBaseUri(std::move(restApiUri));
         }
 
-        utility::string_t GetManifestByVersionEndpoint(
+        std::wstring GetSearchEndpoint(const std::string& restApiUri)
+        {
+            return AppInstaller::Rest::AppendPathToUri(GetRestAPIBaseUri(restApiUri), Utility::ConvertToUTF16(ManifestSearchPostEndpoint));
+        }
+
+        std::wstring GetManifestByVersionEndpoint(
             const std::string& restApiUri, const std::string& packageId, const std::map<std::string_view, std::string>& queryParameters)
         {
-            utility::string_t getManifestEndpoint = AppInstaller::Rest::AppendPathToUri(
-                AppInstaller::JSON::GetUtilityString(restApiUri), AppInstaller::JSON::GetUtilityString(ManifestByVersionAndChannelGetEndpoint));
+            std::wstring getManifestEndpoint = AppInstaller::Rest::AppendPathToUri(
+                GetRestAPIBaseUri(restApiUri), Utility::ConvertToUTF16(ManifestByVersionAndChannelGetEndpoint));
 
-            utility::string_t getManifestWithPackageIdPath = AppInstaller::Rest::AppendPathToUri(getManifestEndpoint, AppInstaller::JSON::GetUtilityString(packageId));
+            std::wstring getManifestWithPackageIdPath = AppInstaller::Rest::AppendPathToUri(getManifestEndpoint, Utility::ConvertToUTF16(packageId));
 
             // Create the endpoint with query parameters
             return AppInstaller::Rest::AppendQueryParamsToUri(getManifestWithPackageIdPath, queryParameters);
         }
 
-        std::optional<utility::string_t> GetContinuationToken(const web::json::value& jsonObject)
+        std::wstring GetHeaderValue(const AppInstaller::Rest::HttpHeaders& headers, std::wstring_view headerName)
         {
-            std::optional<std::string> continuationToken = AppInstaller::JSON::GetRawStringValueFromJsonNode(jsonObject, AppInstaller::JSON::GetUtilityString(ContinuationToken));
-
-            if (continuationToken)
+            for (const auto& header : headers)
             {
-                return utility::conversions::to_string_t(continuationToken.value());
+                if (Utility::CaseInsensitiveEquals(header.first, headerName))
+                {
+                    return header.second;
+                }
             }
 
             return {};
         }
 
-        AppInstaller::Http::HttpClientHelper::HttpResponseHandlerResult CustomRestCallResponseHandler(const web::http::http_response& response)
+        std::optional<std::wstring> GetContinuationToken(const Json::Value& jsonObject)
         {
-            AppInstaller::Http::HttpClientHelper::HttpResponseHandlerResult result;
-            result.UseDefaultHandling = true;
+            std::optional<std::string> continuationToken = AppInstaller::JSON::GetRawStringValueFromJsonNode(jsonObject, ContinuationToken);
 
-            if (response.status_code() == web::http::status_codes::NotFound &&
-                response.headers().content_type()._Starts_with(web::http::details::mime_types::application_json))
+            if (continuationToken)
             {
-                auto responseJson = response.extract_json().get();
-                if (responseJson.is_object() && responseJson.has_field(L"code") && responseJson.has_field(L"message"))
-                {
-                    // We'll treat 404 with json response containing code and message fields as empty result.
-                    // Leave the HttpResponseHandlerResult result empty and disable default HttpClientHelper handling.
-                    result.UseDefaultHandling = false;
-                }
+                return Utility::ConvertToUTF16(continuationToken.value());
             }
 
-            return result;
+            return {};
         }
     }
 
     Interface::Interface(const std::string& restApi, const Http::HttpClientHelper& httpClientHelper) : m_restApiUri(restApi), m_httpClientHelper(httpClientHelper)
     {
-        THROW_HR_IF(APPINSTALLER_CLI_ERROR_RESTSOURCE_INVALID_URL, !AppInstaller::Rest::IsValidUri(AppInstaller::JSON::GetUtilityString(restApi)));
+        THROW_HR_IF(APPINSTALLER_CLI_ERROR_RESTSOURCE_INVALID_URL, !AppInstaller::Rest::IsValidUri(GetRestAPIBaseUri(restApi)));
 
         m_searchEndpoint = GetSearchEndpoint(m_restApiUri);
         m_requiredRestApiHeaders.emplace(AppInstaller::JSON::GetUtilityString(ContractVersion), AppInstaller::JSON::GetUtilityString(Version_1_0_0.ToString()));
@@ -104,7 +105,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0
     IRestClient::SearchResult Interface::SearchInternal(const SearchRequest& request) const
     {
         SearchResult results;
-        utility::string_t continuationToken;
+        std::wstring continuationToken;
         Http::HttpClientHelper::HttpRequestHeaders searchHeaders = m_requiredRestApiHeaders;
         do
         {
@@ -114,12 +115,39 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0
                 searchHeaders.insert_or_assign(AppInstaller::JSON::GetUtilityString(ContinuationToken), continuationToken);
             }
 
-            std::optional<web::json::value> jsonObject = m_httpClientHelper.HandlePost(m_searchEndpoint, GetValidatedSearchBody(request), searchHeaders, GetAuthHeaders(), CustomRestCallResponseHandler);
+            auto jsonObject = m_httpClientHelper.HandlePost(
+                m_searchEndpoint,
+                GetValidatedSearchBody(request),
+                searchHeaders,
+                GetAuthHeaders(),
+                [&](const auto& response)
+                {
+                    Http::HttpClientHelper::HttpResponseHandlerResult result;
+                    result.UseDefaultHandling = true;
 
-            utility::string_t ct;
+                    if (response.StatusCode == HTTP_STATUS_NOT_FOUND &&
+                        GetHeaderValue(response.Headers, AppInstaller::Utility::Http::Header::ContentType)._Starts_with(std::wstring{ AppInstaller::Utility::Http::MimeType::ApplicationJson }))
+                    {
+                        if (!response.Body.empty())
+                        {
+                            Json::Value responseJson = AppInstaller::Rest::Json::Parse(response.Body);
+                            if (responseJson.isObject() && responseJson.isMember("code") && responseJson.isMember("message"))
+                            {
+                                // We'll treat 404 with json response containing code and message fields as empty result.
+                                // Leave the HttpResponseHandlerResult result empty and disable default HttpClientHelper handling.
+                                result.UseDefaultHandling = false;
+                            }
+                        }
+                    }
+
+                    return result;
+                });
+
+            std::wstring ct;
             if (jsonObject)
             {
-                SearchResult currentResult = GetSearchResult(jsonObject.value());
+                Json::Value searchResultValue = jsonObject.value();
+                SearchResult currentResult = GetSearchResult(searchResultValue);
 
                 size_t insertElements = !request.MaximumResults ? currentResult.Matches.size() :
                     std::min(currentResult.Matches.size(), request.MaximumResults - results.Matches.size());
@@ -130,7 +158,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0
                 }
 
                 std::move(currentResult.Matches.begin(), std::next(currentResult.Matches.begin(), insertElements), std::inserter(results.Matches, results.Matches.end()));
-                ct = GetContinuationToken(jsonObject.value()).value_or(L"");
+                ct = GetContinuationToken(searchResultValue).value_or(L"");
             }
 
             continuationToken = ct;
@@ -239,9 +267,31 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0
         auto validatedParams = GetValidatedQueryParams(params);
 
         std::vector<Manifest::Manifest> results;
-        utility::string_t continuationToken;
         Http::HttpClientHelper::HttpRequestHeaders searchHeaders = m_requiredRestApiHeaders;
-        std::optional<web::json::value> jsonObject = m_httpClientHelper.HandleGet(GetManifestByVersionEndpoint(m_restApiUri, packageId, validatedParams), searchHeaders, GetAuthHeaders(), CustomRestCallResponseHandler);
+        auto jsonObject = m_httpClientHelper.HandleGet(
+            GetManifestByVersionEndpoint(m_restApiUri, packageId, validatedParams),
+            searchHeaders,
+            GetAuthHeaders(),
+            [&](const auto& response)
+            {
+                Http::HttpClientHelper::HttpResponseHandlerResult result;
+                result.UseDefaultHandling = true;
+
+                if (response.StatusCode == HTTP_STATUS_NOT_FOUND &&
+                    GetHeaderValue(response.Headers, AppInstaller::Utility::Http::Header::ContentType)._Starts_with(std::wstring{ AppInstaller::Utility::Http::MimeType::ApplicationJson }))
+                {
+                    if (!response.Body.empty())
+                    {
+                        Json::Value responseJson = AppInstaller::Rest::Json::Parse(response.Body);
+                        if (responseJson.isObject() && responseJson.isMember("code") && responseJson.isMember("message"))
+                        {
+                            result.UseDefaultHandling = false;
+                        }
+                    }
+                }
+
+                return result;
+            });
 
         if (!jsonObject)
         {
@@ -281,19 +331,19 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0
         return params;
     }
 
-    web::json::value Interface::GetValidatedSearchBody(const SearchRequest& searchRequest) const
+    Json::Value Interface::GetValidatedSearchBody(const SearchRequest& searchRequest) const
     {
         SearchRequestComposer searchRequestComposer{ GetVersion() };
         return searchRequestComposer.Serialize(searchRequest);
     }
 
-    IRestClient::SearchResult Interface::GetSearchResult(const web::json::value& searchResponseObject) const
+    IRestClient::SearchResult Interface::GetSearchResult(const Json::Value& searchResponseObject) const
     {
         SearchResponseParser searchResponseParser{ GetVersion() };
         return searchResponseParser.Deserialize(searchResponseObject);
     }
 
-    std::vector<Manifest::Manifest> Interface::GetParsedManifests(const web::json::value& manifestsResponseObject) const
+    std::vector<Manifest::Manifest> Interface::GetParsedManifests(const Json::Value& manifestsResponseObject) const
     {
         JSON::ManifestJSONParser manifestParser{ GetVersion() };
         return manifestParser.Deserialize(manifestsResponseObject);

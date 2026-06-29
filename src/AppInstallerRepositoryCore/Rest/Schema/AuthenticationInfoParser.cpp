@@ -51,9 +51,9 @@ namespace AppInstaller::Repository::Rest::Schema
     //         "Scope" : "test"
     //     }
     // }
-    Authentication::AuthenticationInfo ParseAuthenticationInfo(const web::json::value& dataObject, ParseAuthenticationInfoType parseType, std::optional<Manifest::ManifestVer> manifestVersion)
+    Authentication::AuthenticationInfo ParseAuthenticationInfo(const Json::Value& dataObject, ParseAuthenticationInfoType parseType, std::optional<Manifest::ManifestVer> manifestVersion)
     {
-        auto authenticationObject = JSON::GetJsonValueFromNode(dataObject, JSON::GetUtilityString(Authentication));
+        auto authenticationObject = JSON::GetJsonValueFromNode(dataObject, Authentication);
         if (!authenticationObject)
         {
             AICLI_LOG(Repo, Info, << "Authentication node not found. Assuming authentication type none.");
@@ -61,7 +61,7 @@ namespace AppInstaller::Repository::Rest::Schema
         }
 
         const auto& authenticationObjectNode = authenticationObject.value().get();
-        if (authenticationObjectNode.is_null())
+        if (authenticationObjectNode.isNull())
         {
             AICLI_LOG(Repo, Info, << "Authentication node is null. Assuming authentication type none.");
             return {};
@@ -70,7 +70,7 @@ namespace AppInstaller::Repository::Rest::Schema
         Authentication::AuthenticationInfo result;
         result.Type = Authentication::AuthenticationType::Unknown;
 
-        auto authenticationTypeString = JSON::GetRawStringValueFromJsonNode(authenticationObjectNode, JSON::GetUtilityString(AuthenticationType));
+        auto authenticationTypeString = JSON::GetRawStringValueFromJsonNode(authenticationObjectNode, AuthenticationType);
         // AuthenticationType required if Authentication exists and is not null.
         THROW_HR_IF(APPINSTALLER_CLI_ERROR_INVALID_AUTHENTICATION_INFO, !JSON::IsValidNonEmptyStringValue(authenticationTypeString));
         if (parseType == ParseAuthenticationInfoType::Source)
@@ -84,19 +84,19 @@ namespace AppInstaller::Repository::Rest::Schema
         }
 
         // Parse MicrosoftEntraId info
-        auto microsoftEntraIdInfoObject = JSON::GetJsonValueFromNode(authenticationObjectNode, JSON::GetUtilityString(MicrosoftEntraIdAuthenticationInfo));
+        auto microsoftEntraIdInfoObject = JSON::GetJsonValueFromNode(authenticationObjectNode, MicrosoftEntraIdAuthenticationInfo);
         if (microsoftEntraIdInfoObject)
         {
             const auto& microsoftEntraIdInfoNode = microsoftEntraIdInfoObject.value().get();
 
             Authentication::MicrosoftEntraIdAuthenticationInfo microsoftEntraIdInfo;
 
-            auto resourceString = JSON::GetRawStringValueFromJsonNode(microsoftEntraIdInfoNode, JSON::GetUtilityString(MicrosoftEntraId_Resource));
+            auto resourceString = JSON::GetRawStringValueFromJsonNode(microsoftEntraIdInfoNode, MicrosoftEntraId_Resource);
             // Resource required if MicrosoftEntraIdAuthenticationInfo exists and is not null.
             THROW_HR_IF(APPINSTALLER_CLI_ERROR_INVALID_AUTHENTICATION_INFO, !JSON::IsValidNonEmptyStringValue(resourceString));
             microsoftEntraIdInfo.Resource = std::move(resourceString.value());
 
-            auto scopeString = JSON::GetRawStringValueFromJsonNode(microsoftEntraIdInfoNode, JSON::GetUtilityString(MicrosoftEntraId_Scope));
+            auto scopeString = JSON::GetRawStringValueFromJsonNode(microsoftEntraIdInfoNode, MicrosoftEntraId_Scope);
             if (JSON::IsValidNonEmptyStringValue(scopeString))
             {
                 microsoftEntraIdInfo.Scope = std::move(scopeString.value());

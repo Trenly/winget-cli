@@ -42,7 +42,7 @@ namespace AppInstaller::Repository::Rest::Schema
         }
     }
 
-    web::json::value SearchRequestComposer::Serialize(const AppInstaller::Repository::SearchRequest& searchRequest) const
+    Json::Value SearchRequestComposer::Serialize(const AppInstaller::Repository::SearchRequest& searchRequest) const
     {
         return m_pImpl->m_serializer->Serialize(searchRequest);
     }

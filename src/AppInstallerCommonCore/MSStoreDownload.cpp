@@ -6,12 +6,12 @@
 #include <AppinstallerLogging.h>
 #include "AppInstallerMsixInfo.h"
 #include "AppInstallerRuntime.h"
-#include "winget/HttpClientHelper.h"
 #include "winget/JsonUtil.h"
 #include "winget/Locale.h"
 #include "winget/MSStoreDownload.h"
 #include "winget/NetworkSettings.h"
 #include "winget/Rest.h"
+#include "winget/RestHelpers.h"
 #include "winget/UserSettings.h"
 #ifndef WINGET_DISABLE_FOR_FUZZING
 #include <sfsclient/SFSClient.h>
@@ -24,11 +24,11 @@ namespace AppInstaller::MSStore
 #ifndef AICLI_DISABLE_TEST_HOOKS
     namespace TestHooks
     {
-        static std::shared_ptr<web::http::http_pipeline_stage> s_DisplayCatalog_HttpPipelineStage_Override = nullptr;
+        static std::shared_ptr<Rest::IHttpClient> s_DisplayCatalog_HttpPipelineStage_Override = nullptr;
 
-        void SetDisplayCatalogHttpPipelineStage_Override(std::shared_ptr<web::http::http_pipeline_stage> value)
+        void SetDisplayCatalogHttpPipelineStage_Override(std::shared_ptr<Rest::IHttpClient> value)
         {
-            s_DisplayCatalog_HttpPipelineStage_Override = value;
+            s_DisplayCatalog_HttpPipelineStage_Override = std::move(value);
         }
 
         static std::function<std::vector<SFS::AppContent>(std::string_view)>* s_SfsClient_AppContents_Override = nullptr;
@@ -38,14 +38,32 @@ namespace AppInstaller::MSStore
             s_SfsClient_AppContents_Override = value;
         }
 
-        static std::shared_ptr<web::http::http_pipeline_stage> s_Licensing_HttpPipelineStage_Override = nullptr;
+        static std::shared_ptr<Rest::IHttpClient> s_Licensing_HttpPipelineStage_Override = nullptr;
 
-        void SetLicensingHttpPipelineStage_Override(std::shared_ptr<web::http::http_pipeline_stage> value)
+        void SetLicensingHttpPipelineStage_Override(std::shared_ptr<Rest::IHttpClient> value)
         {
-            s_Licensing_HttpPipelineStage_Override = value;
+            s_Licensing_HttpPipelineStage_Override = std::move(value);
         }
+
     }
 #endif
+
+    namespace
+    {
+        std::shared_ptr<Rest::IHttpClient> CreateHttpClient(std::shared_ptr<Rest::IHttpClient> httpClientOverride)
+        {
+#ifndef AICLI_DISABLE_TEST_HOOKS
+            if (httpClientOverride)
+            {
+                return httpClientOverride;
+            }
+#else
+            UNREFERENCED_PARAMETER(httpClientOverride);
+#endif
+
+            return std::shared_ptr<Rest::IHttpClient>(Rest::CreateWinHttpClient().release());
+        }
+    }
 
     namespace DisplayCatalogDetails
     {
@@ -394,7 +412,7 @@ namespace AppInstaller::MSStore
 
         // Display catalog API invocation and handling
 
-        utility::string_t GetDisplayCatalogRestApi(std::string_view productId, std::string_view locale)
+        std::wstring GetDisplayCatalogRestApi(std::string_view productId, std::string_view locale)
         {
             std::vector<Utility::LocIndString> locales;
             if (!locale.empty())
@@ -431,41 +449,41 @@ namespace AppInstaller::MSStore
         //     ]
         //   }
         // }
-        std::reference_wrapper<const web::json::value> GetSkuNodeFromDisplayCatalogResponse(const web::json::value& responseObject)
+        const Json::Value& GetSkuNodeFromDisplayCatalogResponse(const Json::Value& responseObject)
         {
             AICLI_LOG(Core, Info, << "Started parsing display catalog response. Try to find target sku: " << TargetSkuIdValue);
 
-            if (responseObject.is_null())
+            if (responseObject.isNull())
             {
                 AICLI_LOG(Core, Error, << "Missing DisplayCatalog Response json object.");
                 THROW_HR(APPINSTALLER_CLI_ERROR_DISPLAYCATALOG_API_FAILED);
             }
 
-            std::optional<std::reference_wrapper<const web::json::value>> product = JSON::GetJsonValueFromNode(responseObject, JSON::GetUtilityString(Product));
+            const Json::Value* product = Rest::Json::GetOptionalValue(responseObject, Product);
             if (!product)
             {
                 AICLI_LOG(Core, Error, << "Missing Product node");
                 THROW_HR(APPINSTALLER_CLI_ERROR_DISPLAYCATALOG_API_FAILED);
             }
 
-            auto skuEntries = JSON::GetRawJsonArrayFromJsonNode(product.value().get(), JSON::GetUtilityString(DisplaySkuAvailabilities));
-            if (!skuEntries)
+            const Json::Value* skuEntries = Rest::Json::GetOptionalValue(*product, DisplaySkuAvailabilities);
+            if (!skuEntries || !skuEntries->isArray())
             {
                 AICLI_LOG(Core, Error, << "Missing DisplaySkuAvailabilities");
                 THROW_HR(APPINSTALLER_CLI_ERROR_DISPLAYCATALOG_API_FAILED);
             }
 
-            for (const auto& skuEntry : skuEntries.value().get())
+            for (const Json::Value& skuEntry : *skuEntries)
             {
-                std::optional<std::reference_wrapper<const web::json::value>> sku = JSON::GetJsonValueFromNode(skuEntry, JSON::GetUtilityString(Sku));
+                const Json::Value* sku = Rest::Json::GetOptionalValue(skuEntry, Sku);
                 if (!sku)
                 {
                     AICLI_LOG(Core, Error, << "Missing Sku");
                     THROW_HR(APPINSTALLER_CLI_ERROR_DISPLAYCATALOG_API_FAILED);
                 }
 
-                const auto& skuValue = sku.value().get();
-                auto skuId = JSON::GetRawStringValueFromJsonNode(skuValue, JSON::GetUtilityString(SkuId)).value_or("");
+                const Json::Value& skuValue = *sku;
+                auto skuId = Rest::Json::GetStringValue(skuValue[std::string{ SkuId }]).value_or("");
                 if (TargetSkuIdValue == skuId)
                 {
                     AICLI_LOG(Core, Info, << "Target Sku (" << TargetSkuIdValue << ") found");
@@ -496,20 +514,19 @@ namespace AppInstaller::MSStore
         //     }
         //   }
         // }
-        std::vector<DisplayCatalogPackage> GetDisplayCatalogPackagesFromSkuNode(const web::json::value& jsonObject)
+        std::vector<DisplayCatalogPackage> GetDisplayCatalogPackagesFromSkuNode(const Json::Value& jsonObject)
         {
             AICLI_LOG(Core, Info, << "Started extracting display catalog packages from sku.");
 
-            std::optional<std::reference_wrapper<const web::json::value>> properties = JSON::GetJsonValueFromNode(jsonObject, JSON::GetUtilityString(Properties));
+            const Json::Value* properties = Rest::Json::GetOptionalValue(jsonObject, Properties);
             if (!properties)
             {
                 AICLI_LOG(Core, Error, << "Missing Properties");
                 THROW_HR(APPINSTALLER_CLI_ERROR_DISPLAYCATALOG_API_FAILED);
             }
 
-            const auto& propertiesValue = properties.value().get();
-            auto packages = JSON::GetRawJsonArrayFromJsonNode(propertiesValue, JSON::GetUtilityString(Packages));
-            if (!packages)
+            const Json::Value* packages = Rest::Json::GetOptionalValue(*properties, Packages);
+            if (!packages || !packages->isArray())
             {
                 AICLI_LOG(Core, Error, << "Missing Packages");
                 THROW_HR(APPINSTALLER_CLI_ERROR_DISPLAYCATALOG_API_FAILED);
@@ -517,14 +534,14 @@ namespace AppInstaller::MSStore
 
             std::vector<DisplayCatalogPackage> displayCatalogPackages;
 
-            for (const auto& packageEntry : packages.value().get())
+            for (const Json::Value& packageEntry : *packages)
             {
                 DisplayCatalogPackage catalogPackage;
 
                 // Package Id
-                catalogPackage.PackageId = JSON::GetRawStringValueFromJsonNode(packageEntry, JSON::GetUtilityString(PackageId)).value_or("");
+                catalogPackage.PackageId = Rest::Json::GetStringValue(packageEntry[std::string{ PackageId }]).value_or("");
                 // Architectures
-                auto architectures = JSON::GetRawStringArrayFromJsonNode(packageEntry, JSON::GetUtilityString(Architectures));
+                auto architectures = Rest::Json::GetStringArray(packageEntry[std::string{ Architectures }]);
                 for (const auto& arch : architectures)
                 {
                     auto archEnum = Utility::ConvertToArchitectureEnum(arch);
@@ -534,16 +551,16 @@ namespace AppInstaller::MSStore
                     }
                 }
                 // Languages
-                auto languages = JSON::GetRawStringArrayFromJsonNode(packageEntry, JSON::GetUtilityString(Languages));
+                auto languages = Rest::Json::GetStringArray(packageEntry[std::string{ Languages }]);
                 for (const auto& language : languages)
                 {
                     catalogPackage.Languages.emplace_back(language);
                 }
                 // Package Format
-                auto packageFormat = JSON::GetRawStringValueFromJsonNode(packageEntry, JSON::GetUtilityString(PackageFormat)).value_or("");
+                auto packageFormat = Rest::Json::GetStringValue(packageEntry[std::string{ PackageFormat }]).value_or("");
                 catalogPackage.PackageFormat = ConvertToPackageFormatEnum(packageFormat);
                 // Content Id
-                catalogPackage.ContentId = JSON::GetRawStringValueFromJsonNode(packageEntry, JSON::GetUtilityString(ContentId)).value_or("");
+                catalogPackage.ContentId = Rest::Json::GetStringValue(packageEntry[std::string{ ContentId }]).value_or("");
                 if (catalogPackage.ContentId.empty())
                 {
                     AICLI_LOG(Core, Warning, << "Missing ContentId");
@@ -551,14 +568,14 @@ namespace AppInstaller::MSStore
                     continue;
                 }
                 // WuCategoryId
-                std::optional<std::reference_wrapper<const web::json::value>> fulfillmentData = JSON::GetJsonValueFromNode(packageEntry, JSON::GetUtilityString(FulfillmentData));
+                const Json::Value* fulfillmentData = Rest::Json::GetOptionalValue(packageEntry, FulfillmentData);
                 if (!fulfillmentData)
                 {
                     AICLI_LOG(Core, Warning, << "Missing FulfillmentData");
                     // WuCategoryId is required for sfs-client. Skip this package if missing.
                     continue;
                 }
-                catalogPackage.WuCategoryId = JSON::GetRawStringValueFromJsonNode(fulfillmentData.value().get(), JSON::GetUtilityString(WuCategoryId)).value_or("");
+                catalogPackage.WuCategoryId = Rest::Json::GetStringValue((*fulfillmentData)[std::string{ WuCategoryId }]).value_or("");
                 if (catalogPackage.WuCategoryId.empty())
                 {
                     AICLI_LOG(Core, Warning, << "Missing WuCategoryId");
@@ -572,22 +589,19 @@ namespace AppInstaller::MSStore
             return displayCatalogPackages;
         }
 
-        DisplayCatalogPackage CallDisplayCatalogAndGetPreferredPackage(std::string_view productId, std::string_view locale, Utility::Architecture architecture, const Http::HttpClientHelper::HttpRequestHeaders& authHeaders)
+        DisplayCatalogPackage CallDisplayCatalogAndGetPreferredPackage(std::string_view productId, std::string_view locale, Utility::Architecture architecture, const Rest::HttpHeaders& authHeaders)
         {
             AICLI_LOG(Core, Info, << "CallDisplayCatalogAndGetPreferredPackage with ProductId: " << productId << " Locale: " << locale << " Architecture: " << Utility::ToString(architecture));
 
             auto displayCatalogApi = GetDisplayCatalogRestApi(productId, locale);
 
-            AppInstaller::Http::HttpClientHelper httpClientHelper;
-
 #ifndef AICLI_DISABLE_TEST_HOOKS
-            if (TestHooks::s_DisplayCatalog_HttpPipelineStage_Override)
-            {
-                httpClientHelper = AppInstaller::Http::HttpClientHelper{ TestHooks::s_DisplayCatalog_HttpPipelineStage_Override };
-            }
+            auto httpClient = CreateHttpClient(TestHooks::s_DisplayCatalog_HttpPipelineStage_Override);
+#else
+            auto httpClient = CreateHttpClient({});
 #endif
 
-            std::optional<web::json::value> displayCatalogResponseObject = httpClientHelper.HandleGet(displayCatalogApi, {}, authHeaders);
+            std::optional<Json::Value> displayCatalogResponseObject = Rest::ValidateAndExtractJsonResponse(httpClient->Get(displayCatalogApi, {}, authHeaders));
 
             if (!displayCatalogResponseObject)
             {
@@ -596,7 +610,7 @@ namespace AppInstaller::MSStore
             }
 
             const auto& sku = GetSkuNodeFromDisplayCatalogResponse(displayCatalogResponseObject.value());
-            auto displayCatalogPackages = GetDisplayCatalogPackagesFromSkuNode(sku.get());
+            auto displayCatalogPackages = GetDisplayCatalogPackagesFromSkuNode(sku);
 
             DisplayCatalogPackageComparison::DisplayCatalogPackageComparator packageComparator{ std::string{ locale }, architecture };
             auto preferredPackageResult = packageComparator.GetPreferredPackage(displayCatalogPackages);
@@ -1042,33 +1056,34 @@ namespace AppInstaller::MSStore
         //     ]
         //   }
         // }
-        std::vector<BYTE> GetLicensing(std::string_view contentId, const Http::HttpClientHelper::HttpRequestHeaders& authHeaders)
+        std::vector<BYTE> GetLicensing(std::string_view contentId, const Rest::HttpHeaders& authHeaders)
         {
             AICLI_LOG(Core, Error, << "GetLicensing with ContentId: " << contentId);
 
-            AppInstaller::Http::HttpClientHelper httpClientHelper;
+            Json::Value requestBody{ Json::objectValue };
+            requestBody[std::string{ ContentId }] = std::string{ contentId };
+            Rest::HttpHeaders requestHeaders;
+            requestHeaders.emplace(Utility::ConvertToUTF16(From), L"winget-cli");
 
-#ifndef AICLI_DISABLE_TEST_HOOKS
-            if (TestHooks::s_Licensing_HttpPipelineStage_Override)
-            {
-                httpClientHelper = AppInstaller::Http::HttpClientHelper{ TestHooks::s_Licensing_HttpPipelineStage_Override };
-            }
-#endif
-
-            web::json::value requestBody;
-            requestBody[JSON::GetUtilityString(ContentId)] = web::json::value::string(JSON::GetUtilityString(contentId));
-            Http::HttpClientHelper::HttpRequestHeaders requestHeaders;
-            requestHeaders.insert_or_assign(JSON::GetUtilityString(From), L"winget-cli");
-
-            std::optional<web::json::value> licensingResponseObject = std::nullopt;
+            std::optional<Json::Value> licensingResponseObject = std::nullopt;
             try
             {
-                licensingResponseObject = httpClientHelper.HandlePost(
-                    JSON::GetUtilityString(LicensingRestEndpoint), requestBody, requestHeaders, authHeaders);
+                #ifndef AICLI_DISABLE_TEST_HOOKS
+                auto httpClient = CreateHttpClient(TestHooks::s_Licensing_HttpPipelineStage_Override);
+                #else
+                auto httpClient = CreateHttpClient({});
+                #endif
+
+                licensingResponseObject = Rest::ValidateAndExtractJsonResponse(httpClient->Post(
+                    Utility::ConvertToUTF16(LicensingRestEndpoint),
+                    requestBody,
+                    requestHeaders,
+                    authHeaders));
             }
             catch (const wil::ResultException& re)
             {
-                if (re.GetErrorCode() == HTTP_E_STATUS_FORBIDDEN)
+                if (re.GetErrorCode() == HTTP_E_STATUS_FORBIDDEN ||
+                    re.GetErrorCode() == MAKE_HRESULT(SEVERITY_ERROR, FACILITY_HTTP, 403))
                 {
                     AICLI_LOG(CLI, Error, << "Getting MSStore package license failed. The Microsoft Entra Id account does not have privilege.");
                     THROW_HR(APPINSTALLER_CLI_ERROR_LICENSING_API_FAILED_FORBIDDEN);
@@ -1080,27 +1095,27 @@ namespace AppInstaller::MSStore
                 }
             }
 
-            if (!licensingResponseObject || licensingResponseObject->is_null())
+            if (!licensingResponseObject || licensingResponseObject->isNull())
             {
                 AICLI_LOG(Core, Error, << "Empty licensing response");
                 THROW_HR(APPINSTALLER_CLI_ERROR_LICENSING_API_FAILED);
             }
 
-            std::optional<std::reference_wrapper<const web::json::value>> license = JSON::GetJsonValueFromNode(licensingResponseObject.value(), JSON::GetUtilityString(License));
+            const Json::Value* license = Rest::Json::GetOptionalValue(licensingResponseObject.value(), License);
             if (!license)
             {
                 AICLI_LOG(Core, Error, << "Missing license node");
                 THROW_HR(APPINSTALLER_CLI_ERROR_LICENSING_API_FAILED);
             }
 
-            auto keys = JSON::GetRawJsonArrayFromJsonNode(license.value().get(), JSON::GetUtilityString(Keys));
-            if (!keys || keys->get().size() == 0)
+            const Json::Value* keys = Rest::Json::GetOptionalValue(*license, Keys);
+            if (!keys || !keys->isArray() || keys->empty())
             {
                 AICLI_LOG(Core, Error, << "Missing keys or empty keys");
                 THROW_HR(APPINSTALLER_CLI_ERROR_LICENSING_API_FAILED);
             }
 
-            std::string base64LicenseContent = JSON::GetRawStringValueFromJsonNode(keys->get().at(0), JSON::GetUtilityString(Value)).value_or("");
+            std::string base64LicenseContent = Rest::Json::GetStringValue((*keys)[0][std::string{ Value }]).value_or("");
             if (base64LicenseContent.empty())
             {
                 AICLI_LOG(Core, Error, << "Missing license content");
@@ -1113,14 +1128,14 @@ namespace AppInstaller::MSStore
 
     namespace
     {
-        Http::HttpClientHelper::HttpRequestHeaders GetAuthHeaders(std::unique_ptr<Authentication::Authenticator>& authenticator)
+        Rest::HttpHeaders GetAuthHeaders(std::unique_ptr<Authentication::Authenticator>& authenticator)
         {
             if (!authenticator)
             {
                 return {};
             }
 
-            Http::HttpClientHelper::HttpRequestHeaders result;
+            Rest::HttpHeaders result;
 
             auto authResult = authenticator->AuthenticateForToken();
             if (FAILED(authResult.Status))
@@ -1128,7 +1143,7 @@ namespace AppInstaller::MSStore
                 AICLI_LOG(Repo, Error, << "Authentication failed. Result: " << authResult.Status);
                 THROW_HR_MSG(authResult.Status, "Failed to authenticate for MicrosoftEntraId");
             }
-            result.insert_or_assign(web::http::header_names::authorization, JSON::GetUtilityString(Authentication::CreateBearerToken(authResult.Token)));
+            result.emplace(L"Authorization", JSON::GetUtilityString(Authentication::CreateBearerToken(authResult.Token)));
 
             return result;
         }

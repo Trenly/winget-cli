@@ -1,74 +1,118 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 #include "pch.h"
 #include "TestCommon.h"
 #include "TestRestRequestHandler.h"
-#include <Rest/Schema/1_0/Interface.h>
-#include <Rest/Schema/IRestClient.h>
+#include <AppInstallerStrings.h>
+#include <winget/JsonUtil.h>
+
+using namespace AppInstaller::Rest;
+
+namespace
+{
+    bool ContainsHeader(const HttpHeaders& headers, const std::wstring& name, const std::wstring& value)
+    {
+        for (const auto& header : headers)
+        {
+            if (AppInstaller::Utility::CaseInsensitiveEquals(header.first, name) &&
+                AppInstaller::Utility::CaseInsensitiveEquals(header.second, value))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
+TestRestRequestHandler::TestRestRequestHandler(Handler handler) : m_handler(std::move(handler))
+{
+}
+
+TestRestRequestHandler::Response TestRestRequestHandler::Send(const Request& request) const
+{
+    return m_handler(request);
+}
+
+TestRestRequestHandler::Response TestRestRequestHandler::Get(const std::wstring& uri, const HttpHeaders& headers, const HttpHeaders& authHeaders) const
+{
+    Request request;
+    request.Method = winrt::Windows::Web::Http::HttpMethod::Get().Method();
+    request.Uri = uri;
+    request.Headers = headers;
+    request.AuthHeaders = authHeaders;
+    return Send(request);
+}
+
+TestRestRequestHandler::Response TestRestRequestHandler::Post(const std::wstring& uri, const ::Json::Value& body, const HttpHeaders& headers, const HttpHeaders& authHeaders) const
+{
+    Request request;
+    request.Method = winrt::Windows::Web::Http::HttpMethod::Post().Method();
+    request.Uri = uri;
+    request.Headers = headers;
+    request.AuthHeaders = authHeaders;
+    request.Body = AppInstaller::Rest::Json::Serialize(body);
+    return Send(request);
+}
 
 std::shared_ptr<TestRestRequestHandler> GetTestRestRequestHandler(
-    const web::http::status_code statusCode, const utility::string_t& sampleResponseString, const utility::string_t& mimeType)
+    const uint32_t statusCode, const std::wstring& sampleResponseString, const std::wstring& mimeType)
 {
-    return std::make_shared<TestRestRequestHandler>([statusCode, sampleResponseString, mimeType](web::http::http_request) ->
-        pplx::task<web::http::http_response>
+    return std::make_shared<TestRestRequestHandler>(
+        [statusCode, sampleResponseString, mimeType](const Request&) -> Response
         {
-            web::http::http_response response;
-            if (sampleResponseString.empty())
+            Response response;
+            response.StatusCode = statusCode;
+            if (!sampleResponseString.empty())
             {
-                response.set_body(utf16string{});
-            }
-            else
-            {
-                response.set_body(web::json::value::parse(sampleResponseString));
+                response.Body = AppInstaller::Utility::ConvertToUTF8(sampleResponseString);
             }
 
-            response.headers().set_content_type(mimeType);
-            response.headers().set_cache_control(L"no-store");
-            response.set_status_code(statusCode);
-            return pplx::task_from_result(response);
+            response.Headers.emplace(std::wstring{ AppInstaller::Utility::Http::Header::ContentType }, mimeType);
+            response.Headers.emplace(std::wstring{ AppInstaller::Utility::Http::Header::CacheControl }, L"no-store");
+            return response;
         });
 }
 
 std::shared_ptr<TestRestRequestHandler> GetTestRestRequestHandler(
-    std::function<web::http::status_code(const web::http::http_request& request)> handler)
+    std::function<uint32_t(const Request& request)> handler)
 {
-    return std::make_shared<TestRestRequestHandler>([handler = std::move(handler)](web::http::http_request request) ->
-        pplx::task<web::http::http_response>
+    return std::make_shared<TestRestRequestHandler>(
+        [handler = std::move(handler)](const Request& request) -> Response
         {
-            web::http::http_response response;
-            response.set_body(utf16string{});
-
-            response.headers().set_content_type(web::http::details::mime_types::application_json);
-            response.headers().set_cache_control(L"no-store");
-            response.set_status_code(handler(request));
-            return pplx::task_from_result(response);
+            Response response;
+            response.StatusCode = handler(request);
+            response.Body = "{}";
+            response.Headers.emplace(std::wstring{ AppInstaller::Utility::Http::Header::ContentType }, std::wstring{ AppInstaller::Utility::Http::MimeType::ApplicationJson });
+            response.Headers.emplace(std::wstring{ AppInstaller::Utility::Http::Header::CacheControl }, L"no-store");
+            return response;
         });
 }
 
 std::shared_ptr<TestRestRequestHandler> GetHeaderVerificationHandler(
-    const web::http::status_code statusCode, const utility::string_t& sampleResponseString, const std::pair<utility::string_t, utility::string_t>& header, web::http::status_code statusCodeOnFailure)
+    const uint32_t statusCode, const std::wstring& sampleResponseString, const std::pair<std::wstring, std::wstring>& header, uint32_t statusCodeOnFailure)
 {
-    return std::make_shared<TestRestRequestHandler>([statusCode, sampleResponseString, header, statusCodeOnFailure](web::http::http_request request) ->
-        pplx::task<web::http::http_response>
+    return std::make_shared<TestRestRequestHandler>(
+        [statusCode, sampleResponseString, header, statusCodeOnFailure](const Request& request) -> Response
         {
-            web::http::http_response response;
-            auto& headers = request.headers();
-            if (!headers.has(header.first) ||
-                (utility::conversions::to_utf8string(header.second).compare(utility::conversions::to_utf8string(headers[header.first]))) != 0)
+            Response response;
+
+            if ((!ContainsHeader(request.Headers, header.first, header.second)) &&
+                (!ContainsHeader(request.AuthHeaders, header.first, header.second)))
             {
-                response.set_body(utf16string{ L"Expected header not found" });
-                response.set_status_code(statusCodeOnFailure);
-                return pplx::task_from_result(response);
+                response.Body = "Expected header not found";
+                response.StatusCode = statusCodeOnFailure;
+                return response;
             }
 
             if (!sampleResponseString.empty())
             {
-                response.set_body(web::json::value::parse(sampleResponseString));
+                response.Body = AppInstaller::Utility::ConvertToUTF8(sampleResponseString);
             }
 
-            response.headers().set_content_type(web::http::details::mime_types::application_json);
-            response.headers().set_cache_control(L"no-store");
-            response.set_status_code(statusCode);
-            return pplx::task_from_result(response);
+            response.StatusCode = statusCode;
+            response.Headers.emplace(std::wstring{ AppInstaller::Utility::Http::Header::ContentType }, std::wstring{ AppInstaller::Utility::Http::MimeType::ApplicationJson });
+            response.Headers.emplace(std::wstring{ AppInstaller::Utility::Http::Header::CacheControl }, L"no-store");
+            return response;
         });
 }

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 #include "pch.h"
 #include "TestCommon.h"
@@ -23,7 +23,7 @@ RestClient CreateRestClient(
     const std::string& restApi,
     const std::optional<std::string>& customHeader,
     std::string_view caller,
-    const Http::HttpClientHelper& helper,
+    const AppInstaller::Http::HttpClientHelper& helper,
     const Authentication::AuthenticationArguments& authArgs = {})
 {
     return RestClient::Create(restApi, customHeader, caller, helper, RestClient::GetInformation(restApi, customHeader, caller, helper), authArgs);
@@ -83,8 +83,7 @@ TEST_CASE("GetSupportedInterface", "[RestSource]")
 
 TEST_CASE("GetInformation_Success", "[RestSource]")
 {
-    utility::string_t sample = _XPLATSTR(
-        R"delimiter({
+    std::wstring sample = LR"delimiter({
             "Data" : {
               "SourceIdentifier": "Source123",
               "ServerSupportedVersions": [
@@ -112,9 +111,9 @@ TEST_CASE("GetInformation_Success", "[RestSource]")
               "UnsupportedPackageMatchFields": [
                 "Moniker"
               ]
-        }})delimiter");
+        }})delimiter";
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, sample) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, sample) };
     IRestClient::Information information = RestClient::GetInformation(TestRestUri, {}, {}, helper);
     REQUIRE(information.SourceIdentifier == "Source123");
     REQUIRE(information.ServerSupportedVersions.size() == 2);
@@ -139,8 +138,7 @@ TEST_CASE("GetInformation_Success", "[RestSource]")
 
 TEST_CASE("GetInformation_WithAuthenticationInfo_Success", "[RestSource]")
 {
-    utility::string_t sample = _XPLATSTR(
-        R"delimiter({
+    std::wstring sample = LR"delimiter({
             "Data" : {
               "SourceIdentifier": "Source123",
               "ServerSupportedVersions": [
@@ -174,9 +172,9 @@ TEST_CASE("GetInformation_WithAuthenticationInfo_Success", "[RestSource]")
                   "Scope" : "test"
                 }
               }
-        }})delimiter");
+        }})delimiter";
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, sample) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, sample) };
     IRestClient::Information information = RestClient::GetInformation(TestRestUri, {}, {}, helper);
     REQUIRE(information.SourceIdentifier == "Source123");
     REQUIRE(information.ServerSupportedVersions.size() == 1);
@@ -202,8 +200,7 @@ TEST_CASE("GetInformation_WithAuthenticationInfo_Success", "[RestSource]")
 
 TEST_CASE("GetInformation_Fail_AgreementsWithoutIdentifier", "[RestSource]")
 {
-    utility::string_t sample = _XPLATSTR(
-        R"delimiter({
+    std::wstring sample = LR"delimiter({
             "Data" : {
               "SourceIdentifier": "Source123",
               "ServerSupportedVersions": [
@@ -217,16 +214,15 @@ TEST_CASE("GetInformation_Fail_AgreementsWithoutIdentifier", "[RestSource]")
                   }
                 ]
               }
-        }})delimiter");
+        }})delimiter";
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, sample) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, sample) };
     REQUIRE_THROWS_HR(RestClient::GetInformation(TestRestUri, {}, {}, helper), APPINSTALLER_CLI_ERROR_UNSUPPORTED_RESTSOURCE);
 }
 
 TEST_CASE("GetInformation_Fail_InvalidMicrosoftEntraIdInfo", "[RestSource]")
 {
-    utility::string_t sample1 = _XPLATSTR(
-        R"delimiter({
+    std::wstring sample1 = LR"delimiter({
             "Data" : {
               "SourceIdentifier": "Source123",
               "ServerSupportedVersions": [
@@ -235,13 +231,12 @@ TEST_CASE("GetInformation_Fail_InvalidMicrosoftEntraIdInfo", "[RestSource]")
               "Authentication": {
                 "AuthenticationType": "microsoftEntraId"
               }
-        }})delimiter");
+        }})delimiter";
 
-    HttpClientHelper helper1{ GetTestRestRequestHandler(web::http::status_codes::OK, sample1) };
+    HttpClientHelper helper1{ GetTestRestRequestHandler(HTTP_STATUS_OK, sample1) };
     REQUIRE_THROWS_HR(RestClient::GetInformation(TestRestUri, {}, {}, helper1), APPINSTALLER_CLI_ERROR_UNSUPPORTED_RESTSOURCE);
 
-    utility::string_t sample2 = _XPLATSTR(
-        R"delimiter({
+    std::wstring sample2 = LR"delimiter({
             "Data" : {
               "SourceIdentifier": "Source123",
               "ServerSupportedVersions": [
@@ -254,13 +249,12 @@ TEST_CASE("GetInformation_Fail_InvalidMicrosoftEntraIdInfo", "[RestSource]")
                   "Scope" : "test"
                 }
               }
-        }})delimiter");
+        }})delimiter";
 
-    HttpClientHelper helper2{ GetTestRestRequestHandler(web::http::status_codes::OK, sample2) };
+    HttpClientHelper helper2{ GetTestRestRequestHandler(HTTP_STATUS_OK, sample2) };
     REQUIRE_THROWS_HR(RestClient::GetInformation(TestRestUri, {}, {}, helper2), APPINSTALLER_CLI_ERROR_UNSUPPORTED_RESTSOURCE);
 
-    utility::string_t sample3 = _XPLATSTR(
-        R"delimiter({
+    std::wstring sample3 = LR"delimiter({
             "Data" : {
               "SourceIdentifier": "Source123",
               "ServerSupportedVersions": [
@@ -272,13 +266,12 @@ TEST_CASE("GetInformation_Fail_InvalidMicrosoftEntraIdInfo", "[RestSource]")
                   "Scope" : "test"
                 }
               }
-        }})delimiter");
+        }})delimiter";
 
-    HttpClientHelper helper3{ GetTestRestRequestHandler(web::http::status_codes::OK, sample3) };
+    HttpClientHelper helper3{ GetTestRestRequestHandler(HTTP_STATUS_OK, sample3) };
     REQUIRE_THROWS_HR(RestClient::GetInformation(TestRestUri, {}, {}, helper3), APPINSTALLER_CLI_ERROR_UNSUPPORTED_RESTSOURCE);
 
-    utility::string_t sample4 = _XPLATSTR(
-        R"delimiter({
+    std::wstring sample4 = LR"delimiter({
             "Data" : {
               "SourceIdentifier": "Source123",
               "ServerSupportedVersions": [
@@ -287,9 +280,9 @@ TEST_CASE("GetInformation_Fail_InvalidMicrosoftEntraIdInfo", "[RestSource]")
               "Authentication": {
                 "AuthenticationType": "microsoftEntraIdForAzureBlobStorage"
               }
-        }})delimiter");
+        }})delimiter";
 
-    HttpClientHelper helper4{ GetTestRestRequestHandler(web::http::status_codes::OK, sample4) };
+    HttpClientHelper helper4{ GetTestRestRequestHandler(HTTP_STATUS_OK, sample4) };
     Authentication::AuthenticationArguments authArgs;
     authArgs.Mode = Authentication::AuthenticationMode::Silent;
     Version version_1_7{ "1.7.0" };
@@ -298,23 +291,21 @@ TEST_CASE("GetInformation_Fail_InvalidMicrosoftEntraIdInfo", "[RestSource]")
 
 TEST_CASE("RestClientCreate_UnsupportedVersion", "[RestSource]")
 {
-    utility::string_t sample = _XPLATSTR(
-        R"delimiter({
+    std::wstring sample = LR"delimiter({
             "Data" : {
               "SourceIdentifier": "Source123",
               "ServerSupportedVersions": [
                 "1.2.0",
                 "2.0.0"]
-        }})delimiter");
+        }})delimiter";
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, sample) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, sample) };
     REQUIRE_THROWS_HR(CreateRestClient("https://restsource.com/api", {}, {}, helper), APPINSTALLER_CLI_ERROR_UNSUPPORTED_RESTSOURCE);
 }
 
 TEST_CASE("RestClientCreate_UnsupportedAuthenticationMethod", "[RestSource]")
 {
-    utility::string_t sample = _XPLATSTR(
-        R"delimiter({
+    std::wstring sample = LR"delimiter({
             "Data" : {
               "SourceIdentifier": "Source123",
               "ServerSupportedVersions": [
@@ -323,9 +314,9 @@ TEST_CASE("RestClientCreate_UnsupportedAuthenticationMethod", "[RestSource]")
               "Authentication": {
                 "AuthenticationType": "unknown"
               }
-        }})delimiter");
+        }})delimiter";
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, sample) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, sample) };
     Authentication::AuthenticationArguments authArgs;
     authArgs.Mode = Authentication::AuthenticationMode::Silent;
     REQUIRE_THROWS_HR(CreateRestClient("https://restsource.com/api", {}, {}, helper, authArgs), APPINSTALLER_CLI_ERROR_AUTHENTICATION_TYPE_NOT_SUPPORTED);
@@ -333,8 +324,7 @@ TEST_CASE("RestClientCreate_UnsupportedAuthenticationMethod", "[RestSource]")
 
 TEST_CASE("RestClientCreate_InvalidAuthenticationArguments", "[RestSource]")
 {
-    utility::string_t sample = _XPLATSTR(
-        R"delimiter({
+    std::wstring sample = LR"delimiter({
             "Data" : {
               "SourceIdentifier": "Source123",
               "ServerSupportedVersions": [
@@ -346,9 +336,9 @@ TEST_CASE("RestClientCreate_InvalidAuthenticationArguments", "[RestSource]")
                   "Resource" : "test"
                 }
               }
-        }})delimiter");
+        }})delimiter";
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, sample) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, sample) };
     Authentication::AuthenticationArguments authArgs;
     authArgs.Mode = Authentication::AuthenticationMode::Unknown;
     REQUIRE_THROWS_HR(CreateRestClient("https://restsource.com/api", {}, {}, helper, authArgs), E_UNEXPECTED);
@@ -356,24 +346,22 @@ TEST_CASE("RestClientCreate_InvalidAuthenticationArguments", "[RestSource]")
 
 TEST_CASE("RestClientCreate_1.0_Success", "[RestSource]")
 {
-    utility::string_t sample = _XPLATSTR(
-        R"delimiter({
+    std::wstring sample = LR"delimiter({
             "Data" : {
               "SourceIdentifier": "Source123",
               "ServerSupportedVersions": [
                 "1.0.0",
                 "2.0.0"]
-        }})delimiter");
+        }})delimiter";
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, sample) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, sample) };
     RestClient client = CreateRestClient(TestRestUri, {}, {}, helper);
     REQUIRE(client.GetSourceIdentifier() == "Source123");
 }
 
 TEST_CASE("RestClientCreate_1.1_Success", "[RestSource]")
 {
-    utility::string_t sample = _XPLATSTR(
-        R"delimiter({
+    std::wstring sample = LR"delimiter({
             "Data" : {
               "SourceIdentifier": "Source123",
               "ServerSupportedVersions": [
@@ -400,9 +388,9 @@ TEST_CASE("RestClientCreate_1.1_Success", "[RestSource]")
               "UnsupportedPackageMatchFields": [
                 "Moniker"
               ]
-        }})delimiter");
+        }})delimiter";
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, sample) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, sample) };
     RestClient client = CreateRestClient(TestRestUri, {}, {}, helper);
     REQUIRE(client.GetSourceIdentifier() == "Source123");
     auto information = client.GetSourceInformation();
@@ -429,8 +417,7 @@ TEST_CASE("RestClientCreate_1.7_Success", "[RestSource]")
         return;
     }
 
-    utility::string_t sample = _XPLATSTR(
-        R"delimiter({
+    std::wstring sample = LR"delimiter({
             "Data" : {
               "SourceIdentifier": "Source123",
               "ServerSupportedVersions": [
@@ -464,11 +451,11 @@ TEST_CASE("RestClientCreate_1.7_Success", "[RestSource]")
                   "Scope" : "test"
                 }
               }
-        }})delimiter");
+        }})delimiter";
 
     Authentication::AuthenticationArguments authArgs;
     authArgs.Mode = Authentication::AuthenticationMode::Silent;
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, sample) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, sample) };
     RestClient client = CreateRestClient(TestRestUri, {}, {}, helper, authArgs);
     REQUIRE(client.GetSourceIdentifier() == "Source123");
     auto information = client.GetSourceInformation();
@@ -498,7 +485,7 @@ TEST_CASE("RestInformationCache_RoundTrip", "[RestInformationCache]")
 
     std::wstring endpoint = L"https://test-url-com/information";
     CacheControlPolicy cacheControl{ L"public, max-age=77287" };
-    auto response = web::json::value::parse(
+    auto response = AppInstaller::Rest::Json::Parse(
 R"delimiter({
     "$type": "Microsoft.Marketplace.Storefront.StoreEdgeFD.BusinessLogic.Response.PackageMetadata.PackageMetadataResponse, StoreEdgeFD",
     "Data": {
@@ -554,12 +541,12 @@ R"delimiter({
     REQUIRE(expected.RequiredPackageMatchFields[0] == actual.RequiredPackageMatchFields[0]);
 }
 
-web::json::value CreateInformationResponse(std::string_view identifier)
+Json::Value CreateInformationResponse(std::string_view identifier)
 {
     std::ostringstream stream;
     stream << R"({ "Data": { "SourceIdentifier": ")" << identifier << R"(", "ServerSupportedVersions": [ "1.0.0" ] } })";
 
-    return web::json::value::parse(stream.str());
+    return AppInstaller::Rest::Json::Parse(stream.str());
 }
 
 TEST_CASE("RestInformationCache_Get", "[RestInformationCache]")

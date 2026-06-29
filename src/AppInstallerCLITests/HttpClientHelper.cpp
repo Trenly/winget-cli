@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 #include "pch.h"
 #include "TestCommon.h"
@@ -18,36 +18,36 @@ using namespace AppInstaller::Certificates;
 
 TEST_CASE("ExtractJsonResponse_UnsupportedMimeType", "[RestSource][RestSearch]")
 {
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, L"", web::http::details::mime_types::text_plain) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, L"", std::wstring{ AppInstaller::Utility::Http::MimeType::TextPlain }) };
     REQUIRE_THROWS_HR(helper.HandleGet(L"https://testUri"), APPINSTALLER_CLI_ERROR_RESTAPI_UNSUPPORTED_MIME_TYPE);
 }
 
 TEST_CASE("ValidateAndExtractResponse_ServiceUnavailable", "[RestSource]")
 {
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::ServiceUnavailable) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_SERVICE_UNAVAIL) };
     REQUIRE_THROWS_HR(helper.HandleGet(L"https://testUri"), APPINSTALLER_CLI_ERROR_SERVICE_UNAVAILABLE);
 }
 
 TEST_CASE("ValidateAndExtractResponse_NotFound", "[RestSource]")
 {
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::NotFound) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_NOT_FOUND) };
     REQUIRE_THROWS_HR(helper.HandleGet(L"https://testUri"), APPINSTALLER_CLI_ERROR_RESTAPI_ENDPOINT_NOT_FOUND);
 }
 
 TEST_CASE("EnsureDefaultUserAgent", "[RestSource]")
 {
-    HttpClientHelper helper{ GetTestRestRequestHandler([](const web::http::http_request& request)
+    HttpClientHelper helper{ GetTestRestRequestHandler([](const AppInstaller::Rest::Request& request)
         {
-            auto itr = request.headers().find(web::http::header_names::user_agent);
-            if (itr != request.headers().end() &&
-                itr->second.find(ConvertToUTF16(GetClientVersion())) != utility::string_t::npos &&
-                itr->second.find(ConvertToUTF16(GetPackageVersion())) != utility::string_t::npos)
+            auto itr = request.Headers.find(std::wstring{ AppInstaller::Utility::Http::Header::UserAgent });
+            if (itr != request.Headers.end() &&
+                itr->second.find(ConvertToUTF16(GetClientVersion())) != std::wstring::npos &&
+                itr->second.find(ConvertToUTF16(GetPackageVersion())) != std::wstring::npos)
             {
-                return web::http::status_codes::OK;
+                return HTTP_STATUS_OK;
             }
             else
             {
-                return web::http::status_codes::BadRequest;
+                return HTTP_STATUS_BAD_REQUEST;
             }
         }) };
 
@@ -85,7 +85,7 @@ TEST_CASE("HttpClientHelper_PinningConfiguration", "[RestSource][uses-test-certi
 TEST_CASE("HttpClientHelper_CallerCharacters", "[RestSource]")
 {
     HttpClientHelper::HttpRequestHeaders headers;
-    headers.emplace(web::http::header_names::user_agent, AppInstaller::JSON::GetUtilityString(AppInstaller::Runtime::GetUserAgent("\xe6\xb5\x8b\xe8\xaf\x95")));
+    headers.emplace(std::wstring{ AppInstaller::Utility::Http::Header::UserAgent }, AppInstaller::JSON::GetUtilityString(AppInstaller::Runtime::GetUserAgent("\xe6\xb5\x8b\xe8\xaf\x95")));
 
     HttpClientHelper helper;
     REQUIRE_THROWS_HR(helper.HandleGet(L"https://github.com", headers), APPINSTALLER_CLI_ERROR_RESTAPI_UNSUPPORTED_MIME_TYPE);

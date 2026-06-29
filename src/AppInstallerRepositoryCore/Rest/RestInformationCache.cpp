@@ -1,8 +1,9 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 #include "pch.h"
 #include "RestInformationCache.h"
 #include "Rest/Schema/InformationResponseDeserializer.h"
+#include <winget/RestHelpers.h>
 #include <winget/JsonUtil.h>
 
 namespace AppInstaller::Repository::Rest
@@ -71,7 +72,7 @@ namespace AppInstaller::Repository::Rest
     }
 #endif
 
-    void RestInformationCache::Cache(const std::wstring& endpoint, const std::optional<std::string>& customHeader, std::string_view caller, const Utility::CacheControlPolicy& cacheControl, web::json::value response)
+    void RestInformationCache::Cache(const std::wstring& endpoint, const std::optional<std::string>& customHeader, std::string_view caller, const Utility::CacheControlPolicy& cacheControl, Json::Value response)
 #ifdef AICLI_DISABLE_TEST_HOOKS
         try
 #endif
@@ -106,7 +107,7 @@ namespace AppInstaller::Repository::Rest
             }
 
             item->UnixEpochExpiration = expirationEpoch;
-            item->Data = std::move(response);
+            item->Data = response;
 
             if (StoreCacheView())
             {
@@ -115,9 +116,6 @@ namespace AppInstaller::Repository::Rest
             }
             else
             {
-                // Extract the response back from the item for the next iteration
-                response = std::move(item->Data);
-
                 // Failed to store due to the cache changing, reload and try again.
                 LoadCacheView();
             }
@@ -131,8 +129,6 @@ namespace AppInstaller::Repository::Rest
 
     void RestInformationCache::LoadCacheView()
     {
-        using namespace web::json;
-
         std::unique_ptr<std::istream> stream = m_settingsStream.Get();
         m_cacheView.clear();
 
@@ -141,25 +137,23 @@ namespace AppInstaller::Repository::Rest
             return;
         }
 
-        value cacheValue = value::parse(*stream);
+        Json::Value cacheValue = AppInstaller::Rest::Json::Parse(Utility::ReadEntireStream(*stream));
 
-        if (!cacheValue.is_array())
+        if (!cacheValue.isArray())
         {
             AICLI_LOG(Repo, Warning, << "RestInformationCache value was not an array.");
             return;
         }
 
-        array& cacheArray = cacheValue.as_array();
-
-        for (const value& cacheItemValue : cacheArray)
+        for (const Json::Value& cacheItemValue : cacheValue)
         {
-            if (!cacheItemValue.is_object())
+            if (!cacheItemValue.isObject())
             {
                 AICLI_LOG(Repo, Warning, << "RestInformationCache cache item was not an object.");
                 continue;
             }
 
-            std::optional<uint64_t> expiration = JSON::GetRawUInt64ValueFromJsonNode(cacheItemValue, std::wstring{ s_ExpirationName });
+            std::optional<uint64_t> expiration = AppInstaller::Rest::Json::GetUInt64Value(cacheItemValue[Utility::ConvertToUTF8(s_ExpirationName)]);
             if (!expiration)
             {
                 AICLI_LOG(Repo, Warning, << "RestInformationCache cache item missing expiration.");
@@ -172,7 +166,7 @@ namespace AppInstaller::Repository::Rest
                 continue;
             }
 
-            std::optional<std::wstring> endpoint = JSON::GetWideStringValueFromJsonNode(cacheItemValue, std::wstring{ s_EndpointName });
+            std::optional<std::string> endpoint = AppInstaller::Rest::Json::GetStringValue(cacheItemValue[Utility::ConvertToUTF8(s_EndpointName)]);
             if (!JSON::IsValidNonEmptyStringValue(endpoint))
             {
                 AICLI_LOG(Repo, Warning, << "RestInformationCache cache item missing endpoint.");
@@ -180,28 +174,23 @@ namespace AppInstaller::Repository::Rest
             }
 
             CacheItem cacheItem;
-            cacheItem.Endpoint = endpoint.value();
+            cacheItem.Endpoint = Utility::ConvertToUTF16(endpoint.value());
             cacheItem.UnixEpochExpiration = expiration.value();
 
-            std::optional<std::wstring> hash = JSON::GetWideStringValueFromJsonNode(cacheItemValue, std::wstring{ s_HashName });
+            std::optional<std::string> hash = AppInstaller::Rest::Json::GetStringValue(cacheItemValue[Utility::ConvertToUTF8(s_HashName)]);
             if (JSON::IsValidNonEmptyStringValue(hash))
             {
-                cacheItem.Hash = Utility::SHA256::ConvertToBytes(hash.value());
+                cacheItem.Hash = Utility::SHA256::ConvertToBytes(Utility::ConvertToUTF16(hash.value()));
             }
 
-            auto dataValue = JSON::GetJsonValueFromNode(cacheItemValue, std::wstring{ s_DataName });
-            if (!dataValue)
+            const Json::Value& dataValue = cacheItemValue[Utility::ConvertToUTF8(s_DataName)];
+            if (dataValue.isNull())
             {
                 AICLI_LOG(Repo, Warning, << "RestInformationCache cache item missing data.");
                 continue;
             }
 
-            cacheItem.Data = dataValue.value().get();
-            if (cacheItem.Data.is_null())
-            {
-                AICLI_LOG(Repo, Warning, << "RestInformationCache cache item data value null.");
-                continue;
-            }
+            cacheItem.Data = dataValue;
 
             m_cacheView.emplace_back(std::move(cacheItem));
         }
@@ -223,27 +212,21 @@ namespace AppInstaller::Repository::Rest
 
     [[nodiscard]] bool RestInformationCache::StoreCacheView()
     {
-        using namespace web::json;
-
-        value cacheValue = value::array();
-        array& cacheArray = cacheValue.as_array();
+        Json::Value cacheValue{ Json::arrayValue };
 
         for (const CacheItem& item : m_cacheView)
         {
-            value cacheItemValue = value::object();
-            object& cacheItemObject = cacheItemValue.as_object();
+            Json::Value cacheItemValue{ Json::objectValue };
+            cacheItemValue[Utility::ConvertToUTF8(s_EndpointName)] = Utility::ConvertToUTF8(item.Endpoint);
+            cacheItemValue[Utility::ConvertToUTF8(s_HashName)] = Utility::ConvertToHexString(item.Hash);
+            cacheItemValue[Utility::ConvertToUTF8(s_ExpirationName)] = Json::UInt64{ item.UnixEpochExpiration };
+            cacheItemValue[Utility::ConvertToUTF8(s_DataName)] = item.Data;
 
-            cacheItemObject[std::wstring{ s_EndpointName }] = value::value(item.Endpoint);
-            cacheItemObject[std::wstring{ s_HashName }] = value::value(Utility::ConvertToUTF16(Utility::ConvertToHexString(item.Hash)));
-            cacheItemObject[std::wstring{ s_ExpirationName }] = value::value(item.UnixEpochExpiration);
-            cacheItemObject[std::wstring{ s_DataName }] = item.Data;
-
-            cacheArray[cacheArray.size()] = std::move(cacheItemValue);
+            cacheValue.append(std::move(cacheItemValue));
         }
 
-        std::stringstream stream;
-        cacheValue.serialize(stream);
+        std::string stream = AppInstaller::Rest::Json::Serialize(cacheValue);
 
-        return m_settingsStream.Set(std::move(stream).str());
+        return m_settingsStream.Set(std::move(stream));
     }
 }

@@ -58,13 +58,6 @@
 
 #include <json/json.h>
 
-#pragma warning( push )
-#pragma warning ( disable : 26495 26439 )
-#include <cpprest/http_client.h>
-#include <cpprest/json.h>
-#include <cpprest/uri_builder.h>
-#pragma warning( pop )
-
 #include <AppInstallerDateTime.h>
 #include <AppInstallerDownloader.h>
 #include <AppInstallerErrors.h>

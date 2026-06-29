@@ -82,27 +82,27 @@ namespace AppInstaller::Repository::JSON
 
     ManifestJSONParser::~ManifestJSONParser() = default;
 
-    std::vector<Manifest::Manifest> ManifestJSONParser::Deserialize(const web::json::value& response) const
+    std::vector<Manifest::Manifest> ManifestJSONParser::Deserialize(const Json::Value& response) const
     {
         return m_pImpl->m_deserializer->Deserialize(response);
     }
 
-    std::vector<Manifest::Manifest> ManifestJSONParser::DeserializeData(const web::json::value& data) const
+    std::vector<Manifest::Manifest> ManifestJSONParser::DeserializeData(const Json::Value& data) const
     {
         return m_pImpl->m_deserializer->DeserializeData(data);
     }
 
-    std::vector<Manifest::AppsAndFeaturesEntry> ManifestJSONParser::DeserializeAppsAndFeaturesEntries(const web::json::array& data) const
+    std::vector<Manifest::AppsAndFeaturesEntry> ManifestJSONParser::DeserializeAppsAndFeaturesEntries(const Json::Value& data) const
     {
         return m_pImpl->m_deserializer->DeserializeAppsAndFeaturesEntries(data);
     }
 
-    std::optional<Manifest::ManifestLocalization> ManifestJSONParser::DeserializeLocale(const web::json::value& locale) const
+    std::optional<Manifest::ManifestLocalization> ManifestJSONParser::DeserializeLocale(const Json::Value& locale) const
     {
         return m_pImpl->m_deserializer->DeserializeLocale(locale);
     }
 
-    std::optional<Manifest::InstallationMetadataInfo> ManifestJSONParser::DeserializeInstallationMetadata(const web::json::value& installationMetadata) const
+    std::optional<Manifest::InstallationMetadataInfo> ManifestJSONParser::DeserializeInstallationMetadata(const Json::Value& installationMetadata) const
     {
         return m_pImpl->m_deserializer->DeserializeInstallationMetadata(installationMetadata);
     }

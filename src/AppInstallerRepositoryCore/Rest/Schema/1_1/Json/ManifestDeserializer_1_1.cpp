@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 #include "pch.h"
 #include "ManifestDeserializer.h"
@@ -41,7 +41,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_1::Json
         constexpr std::string_view AgreementUrl = "AgreementUrl"sv;
     }
 
-    std::vector<Manifest::AppsAndFeaturesEntry> ManifestDeserializer::DeserializeAppsAndFeaturesEntries(const web::json::array& entries) const
+    std::vector<Manifest::AppsAndFeaturesEntry> ManifestDeserializer::DeserializeAppsAndFeaturesEntries(const ::Json::Value& entries) const
     {
         std::vector<Manifest::AppsAndFeaturesEntry> result;
 
@@ -147,14 +147,14 @@ namespace AppInstaller::Repository::Rest::Schema::V1_1::Json
         return result;
     }
 
-    Manifest::ManifestInstaller::ExpectedReturnCodeInfo ManifestDeserializer::DeserializeExpectedReturnCodeInfo(const web::json::value& expectedReturnCodeJsonObject) const
+    Manifest::ManifestInstaller::ExpectedReturnCodeInfo ManifestDeserializer::DeserializeExpectedReturnCodeInfo(const ::Json::Value& expectedReturnCodeJsonObject) const
     {
         ExpectedReturnCodeEnum returnResponse = ConvertToExpectedReturnCodeEnum(JSON::GetRawStringValueFromJsonNode(expectedReturnCodeJsonObject, JSON::GetUtilityString(ReturnResponse)).value_or(""));
         
         return { returnResponse, "" };
     }
 
-    std::optional<Manifest::ManifestInstaller> ManifestDeserializer::DeserializeInstaller(const web::json::value& installerJsonObject) const
+    std::optional<Manifest::ManifestInstaller> ManifestDeserializer::DeserializeInstaller(const ::Json::Value& installerJsonObject) const
     {
         auto result = V1_0::Json::ManifestDeserializer::DeserializeInstaller(installerJsonObject);
 
@@ -171,7 +171,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_1::Json
                 JSON::GetRawStringValueFromJsonNode(installerJsonObject, JSON::GetUtilityString(ElevationRequirement)).value_or(""));
 
             // list of unsupported OS architectures
-            std::optional<std::reference_wrapper<const web::json::array>> unsupportedOSArchitectures = JSON::GetRawJsonArrayFromJsonNode(installerJsonObject, JSON::GetUtilityString(UnsupportedOSArchitectures));
+            std::optional<std::reference_wrapper<const ::Json::Value>> unsupportedOSArchitectures = JSON::GetRawJsonArrayFromJsonNode(installerJsonObject, UnsupportedOSArchitectures);
             if (unsupportedOSArchitectures)
             {
                 for (auto& archValue : unsupportedOSArchitectures.value().get())
@@ -196,29 +196,29 @@ namespace AppInstaller::Repository::Rest::Schema::V1_1::Json
             }
 
             // Apps and Features Entries
-            std::optional<std::reference_wrapper<const web::json::array>> arpEntriesNode = JSON::GetRawJsonArrayFromJsonNode(installerJsonObject, JSON::GetUtilityString(AppsAndFeaturesEntries));
+            std::optional<std::reference_wrapper<const ::Json::Value>> arpEntriesNode = JSON::GetRawJsonArrayFromJsonNode(installerJsonObject, AppsAndFeaturesEntries);
             if (arpEntriesNode)
             {
-                installer.AppsAndFeaturesEntries = DeserializeAppsAndFeaturesEntries(arpEntriesNode.value());
+                installer.AppsAndFeaturesEntries = DeserializeAppsAndFeaturesEntries(arpEntriesNode.value().get());
             }
 
             // Markets
-            std::optional<std::reference_wrapper<const web::json::value>> marketsNode = JSON::GetJsonValueFromNode(installerJsonObject, JSON::GetUtilityString(Markets));
-            if (marketsNode && !marketsNode.value().get().is_null())
+            std::optional<std::reference_wrapper<const ::Json::Value>> marketsNode = JSON::GetJsonValueFromNode(installerJsonObject, Markets);
+            if (marketsNode && !marketsNode.value().get().isNull())
             {
                 installer.Markets.ExcludedMarkets = V1_0::Json::ManifestDeserializer::ConvertToManifestStringArray(
-                    JSON::GetRawStringArrayFromJsonNode(marketsNode.value().get(), JSON::GetUtilityString(ExcludedMarkets)));
+                    JSON::GetRawStringArrayFromJsonNode(marketsNode.value().get(), ExcludedMarkets));
                 installer.Markets.AllowedMarkets = V1_0::Json::ManifestDeserializer::ConvertToManifestStringArray(
-                    JSON::GetRawStringArrayFromJsonNode(marketsNode.value().get(), JSON::GetUtilityString(AllowedMarkets)));
+                    JSON::GetRawStringArrayFromJsonNode(marketsNode.value().get(), AllowedMarkets));
             }
 
             // Expected return codes
-            std::optional<std::reference_wrapper<const web::json::array>> expectedReturnCodesNode = JSON::GetRawJsonArrayFromJsonNode(installerJsonObject, JSON::GetUtilityString(ExpectedReturnCodes));
+            std::optional<std::reference_wrapper<const ::Json::Value>> expectedReturnCodesNode = JSON::GetRawJsonArrayFromJsonNode(installerJsonObject, ExpectedReturnCodes);
             if (expectedReturnCodesNode)
             {
                 for (auto& returnCodeNode : expectedReturnCodesNode.value().get())
                 {
-                    DWORD installerReturnCode = static_cast<DWORD>(JSON::GetRawIntValueFromJsonNode(returnCodeNode, JSON::GetUtilityString(InstallerReturnCode)).value_or(0));
+                    DWORD installerReturnCode = static_cast<DWORD>(JSON::GetRawIntValueFromJsonNode(returnCodeNode, InstallerReturnCode).value_or(0));
                     auto returnCodeInfo = DeserializeExpectedReturnCodeInfo(returnCodeNode);
 
                     // Only add when it is valid
@@ -248,7 +248,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_1::Json
         return result;
     }
 
-    std::optional<Manifest::ManifestLocalization> ManifestDeserializer::DeserializeLocale(const web::json::value& localeJsonObject) const
+    std::optional<Manifest::ManifestLocalization> ManifestDeserializer::DeserializeLocale(const ::Json::Value& localeJsonObject) const
     {
         auto result = V1_0::Json::ManifestDeserializer::DeserializeLocale(localeJsonObject);
 

@@ -374,6 +374,7 @@
     <ClInclude Include="Public\winget\Reboot.h" />
     <ClInclude Include="Public\winget\Regex.h" />
     <ClInclude Include="Public\winget\Rest.h" />
+    <ClInclude Include="Public\winget\RestHelpers.h" />
     <ClInclude Include="Public\winget\PathVariable.h" />
     <ClInclude Include="Public\winget\PortableARPEntry.h" />
     <ClInclude Include="Public\winget\PortableFileEntry.h" />
@@ -385,6 +386,7 @@
     <ClInclude Include="Public\winget\TraceLogger.h" />
     <ClInclude Include="Public\winget\UserSettings.h" />
     <ClInclude Include="Telemetry\TraceLogging.h" />
+    <ClInclude Include="RestHelpers\IHttpClient.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AdminSettings.cpp" />
@@ -434,6 +436,12 @@
     <ClCompile Include="Reboot.cpp" />
     <ClCompile Include="Regex.cpp" />
     <ClCompile Include="Rest.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)'=='Fuzzing'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="RestHelpers\Json.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)'=='Fuzzing'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="RestHelpers\WinHttpClient.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)'=='Fuzzing'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Runtime.cpp" />

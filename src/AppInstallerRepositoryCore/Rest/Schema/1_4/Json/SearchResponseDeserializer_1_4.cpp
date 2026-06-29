@@ -14,13 +14,13 @@ namespace AppInstaller::Repository::Rest::Schema::V1_4::Json
         constexpr std::string_view AppsAndFeaturesEntryVersions = "AppsAndFeaturesEntryVersions"sv;
     }
 
-    std::optional<IRestClient::VersionInfo> SearchResponseDeserializer::DeserializeVersionInfo(const web::json::value& versionInfoJsonObject) const
+    std::optional<IRestClient::VersionInfo> SearchResponseDeserializer::DeserializeVersionInfo(const ::Json::Value& versionInfoJsonObject) const
     {
         auto result = V1_0::Json::SearchResponseDeserializer::DeserializeVersionInfo(versionInfoJsonObject);
         if (result.has_value())
         {
-            result->UpgradeCodes = AppInstaller::Rest::GetUniqueItems(JSON::GetRawStringArrayFromJsonNode(versionInfoJsonObject, JSON::GetUtilityString(UpgradeCodes)));
-            auto arpVersions = AppInstaller::Rest::GetUniqueItems(JSON::GetRawStringArrayFromJsonNode(versionInfoJsonObject, JSON::GetUtilityString(AppsAndFeaturesEntryVersions)));
+            result->UpgradeCodes = AppInstaller::Rest::GetUniqueItems(JSON::GetRawStringArrayFromJsonNode(versionInfoJsonObject, UpgradeCodes));
+            auto arpVersions = AppInstaller::Rest::GetUniqueItems(JSON::GetRawStringArrayFromJsonNode(versionInfoJsonObject, AppsAndFeaturesEntryVersions));
             for (auto const& version : arpVersions)
             {
                 result->ArpVersions.emplace_back(Utility::Version{ version });

@@ -17,8 +17,10 @@
 #include "Rest/Schema/CommonRestConstants.h"
 #include <AppInstallerDownloader.h>
 #include <winget/HttpClientHelper.h>
-#include <winget/Rest.h>
 #include <winget/JsonUtil.h>
+#include <winget/Rest.h>
+#include <winget/RestHelpers.h>
+#include <winget/WebRequest.h>
 
 using namespace AppInstaller::Repository::Rest::Schema;
 using namespace AppInstaller::Repository::Rest::Schema::V1_0;
@@ -54,20 +56,20 @@ namespace AppInstaller::Repository::Rest
             {
                 AICLI_LOG(Repo, Verbose, << "Custom header found: " << customHeader.value());
                 THROW_HR_IF(APPINSTALLER_CLI_ERROR_CUSTOMHEADER_EXCEEDS_MAXLENGTH, customHeader.value().size() > WindowsPackageManagerHeaderMaxLength);
-                headers.emplace(JSON::GetUtilityString(WindowsPackageManagerHeader), JSON::GetUtilityString(customHeader.value()));
+                headers.emplace(Utility::ConvertToUTF16(WindowsPackageManagerHeader), Utility::ConvertToUTF16(customHeader.value()));
             }
 
             if (!caller.empty())
             {
                 AICLI_LOG(Repo, Verbose, << "User agent caller found: " << caller);
-                std::wstring userAgentWide = JSON::GetUtilityString(Runtime::GetUserAgent(caller));
+                std::wstring userAgentWide = Utility::ConvertToUTF16(Runtime::GetUserAgent(caller));
                 try
                 {
                     // Replace user profile if the caller binary is under user profile.
                     userAgentWide = Utility::ReplaceWhileCopying(userAgentWide, Runtime::GetPathTo(Runtime::PathName::UserProfile).wstring(), L"%USERPROFILE%");
                 }
                 CATCH_LOG();
-                headers.emplace(web::http::header_names::user_agent, userAgentWide);
+                headers.emplace(AppInstaller::Utility::Http::Header::UserAgent, userAgentWide);
             }
 
             return headers;
@@ -138,9 +140,9 @@ namespace AppInstaller::Repository::Rest
 
     Schema::IRestClient::Information RestClient::GetInformation(const std::string& restApi, const std::optional<std::string>& customHeader, std::string_view caller, const HttpClientHelper& helper)
     {
-        utility::string_t restEndpoint = AppInstaller::Rest::GetRestAPIBaseUri(restApi);
+        std::wstring restEndpoint = ::AppInstaller::Rest::GetRestAPIBaseUri(restApi);
         THROW_HR_IF(APPINSTALLER_CLI_ERROR_RESTSOURCE_INVALID_URL, !AppInstaller::Rest::IsValidUri(restEndpoint));
-        utility::string_t endpoint = AppInstaller::Rest::AppendPathToUri(restEndpoint, JSON::GetUtilityString(InformationGetEndpoint));
+        std::wstring endpoint = AppInstaller::Rest::AppendPathToUri(restEndpoint, Utility::ConvertToUTF16(InformationGetEndpoint));
 
         // Check the cache for a valid information entry
         RestInformationCache informationCache;
@@ -152,23 +154,24 @@ namespace AppInstaller::Repository::Rest
             auto headers = GetHeaders(customHeader, caller);
             CacheControlPolicy cacheControl;
 
-            std::optional<web::json::value> response = helper.HandleGet(
+            auto response = helper.HandleGet(
                 endpoint,
                 headers,
                 {},
-                [&](const web::http::http_response& httpResponse)
+                [&](const auto& httpResponse)
                 {
-                    cacheControl = CacheControlPolicy{ httpResponse.headers().cache_control() };
+                    cacheControl = CacheControlPolicy{ AppInstaller::Rest::GetHeaderValue(httpResponse.Headers, L"Cache-Control") };
                     return Http::HttpClientHelper::HttpResponseHandlerResult{ std::nullopt, true };
                 });
 
             THROW_HR_IF(APPINSTALLER_CLI_ERROR_UNSUPPORTED_RESTSOURCE, !response);
 
             InformationResponseDeserializer responseDeserializer;
-            result = responseDeserializer.Deserialize(response.value());
+            Json::Value responseValue = std::move(response).value();
+            result = responseDeserializer.Deserialize(responseValue);
 
             // Cache the information value as requested
-            informationCache.Cache(endpoint, customHeader, caller, cacheControl, std::move(response).value());
+            informationCache.Cache(endpoint, customHeader, caller, cacheControl, std::move(responseValue));
         }
 
         return std::move(result).value();
@@ -234,7 +237,7 @@ namespace AppInstaller::Repository::Rest
         const Schema::IRestClient::Information& information,
         const Authentication::AuthenticationArguments& authArgs)
     {
-        utility::string_t restEndpoint = AppInstaller::Rest::GetRestAPIBaseUri(restApi);
+        std::wstring restEndpoint = ::AppInstaller::Rest::GetRestAPIBaseUri(restApi);
         THROW_HR_IF(APPINSTALLER_CLI_ERROR_RESTSOURCE_INVALID_URL, !AppInstaller::Rest::IsValidUri(restEndpoint));
 
         auto headers = GetHeaders(customHeader, caller);
@@ -242,7 +245,7 @@ namespace AppInstaller::Repository::Rest
         std::optional<Version> latestCommonVersion = GetLatestCommonVersion(information.ServerSupportedVersions, WingetSupportedContracts);
         THROW_HR_IF(APPINSTALLER_CLI_ERROR_UNSUPPORTED_RESTSOURCE, !latestCommonVersion);
 
-        std::unique_ptr<Schema::IRestClient> supportedInterface = GetSupportedInterface(utility::conversions::to_utf8string(restEndpoint), headers, information, authArgs, latestCommonVersion.value(), helper);
+        std::unique_ptr<Schema::IRestClient> supportedInterface = GetSupportedInterface(Utility::ConvertToUTF8(restEndpoint), headers, information, authArgs, latestCommonVersion.value(), helper);
         return RestClient{ std::move(supportedInterface), information.SourceIdentifier };
     }
 }

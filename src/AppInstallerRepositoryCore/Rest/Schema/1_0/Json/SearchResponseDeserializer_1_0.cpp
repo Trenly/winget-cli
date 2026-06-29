@@ -22,7 +22,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0::Json
         constexpr std::string_view Channel = "Channel"sv;
     }
 
-    IRestClient::SearchResult SearchResponseDeserializer::Deserialize(const web::json::value& searchResponseObject) const
+    IRestClient::SearchResult SearchResponseDeserializer::Deserialize(const ::Json::Value& searchResponseObject) const
     {
         std::optional<IRestClient::SearchResult> response = DeserializeSearchResult(searchResponseObject);
 
@@ -31,10 +31,10 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0::Json
         return response.value();
     }
 
-    std::optional<IRestClient::SearchResult> SearchResponseDeserializer::DeserializeSearchResult(const web::json::value& searchResponseObject) const
+    std::optional<IRestClient::SearchResult> SearchResponseDeserializer::DeserializeSearchResult(const ::Json::Value& searchResponseObject) const
     {
         // Make search result from json output.
-        if (searchResponseObject.is_null())
+        if (searchResponseObject.isNull())
         {
             AICLI_LOG(Repo, Error, << "Missing json object.");
             return {};
@@ -43,7 +43,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0::Json
         IRestClient::SearchResult result;
         try
         {
-            std::optional<std::reference_wrapper<const web::json::array>> dataArray = JSON::GetRawJsonArrayFromJsonNode(searchResponseObject, JSON::GetUtilityString(Data));
+            std::optional<std::reference_wrapper<const ::Json::Value>> dataArray = JSON::GetRawJsonArrayFromJsonNode(searchResponseObject, Data);
             if (!dataArray || dataArray.value().get().size() == 0)
             {
                 AICLI_LOG(Repo, Verbose, << "No search results returned.");
@@ -52,9 +52,9 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0::Json
 
             for (auto& manifestItem : dataArray.value().get())
             {
-                std::optional<std::string> packageId = JSON::GetRawStringValueFromJsonNode(manifestItem, JSON::GetUtilityString(PackageIdentifier));
-                std::optional<std::string> packageName = JSON::GetRawStringValueFromJsonNode(manifestItem, JSON::GetUtilityString(PackageName));
-                std::optional<std::string> publisher = JSON::GetRawStringValueFromJsonNode(manifestItem, JSON::GetUtilityString(Publisher));
+                std::optional<std::string> packageId = JSON::GetRawStringValueFromJsonNode(manifestItem, PackageIdentifier);
+                std::optional<std::string> packageName = JSON::GetRawStringValueFromJsonNode(manifestItem, PackageName);
+                std::optional<std::string> publisher = JSON::GetRawStringValueFromJsonNode(manifestItem, Publisher);
 
                 if (!JSON::IsValidNonEmptyStringValue(packageId) || !JSON::IsValidNonEmptyStringValue(packageName) || !JSON::IsValidNonEmptyStringValue(publisher))
                 {
@@ -62,7 +62,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0::Json
                     return {};
                 }
 
-                std::optional<std::reference_wrapper<const web::json::array>> versionValue = JSON::GetRawJsonArrayFromJsonNode(manifestItem, JSON::GetUtilityString(Versions));
+                std::optional<std::reference_wrapper<const ::Json::Value>> versionValue = JSON::GetRawJsonArrayFromJsonNode(manifestItem, Versions);
                 std::vector<IRestClient::VersionInfo> versionList;
 
                 if (versionValue)
@@ -106,18 +106,18 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0::Json
         return {};
     }
 
-    std::optional<IRestClient::VersionInfo> SearchResponseDeserializer::DeserializeVersionInfo(const web::json::value& versionInfoJsonObject) const
+    std::optional<IRestClient::VersionInfo> SearchResponseDeserializer::DeserializeVersionInfo(const ::Json::Value& versionInfoJsonObject) const
     {
-        std::optional<std::string> version = JSON::GetRawStringValueFromJsonNode(versionInfoJsonObject, JSON::GetUtilityString(PackageVersion));
+        std::optional<std::string> version = JSON::GetRawStringValueFromJsonNode(versionInfoJsonObject, PackageVersion);
         if (!JSON::IsValidNonEmptyStringValue(version))
         {
             AICLI_LOG(Repo, Error, << "Received incomplete package version");
             return {};
         }
 
-        std::string channel = JSON::GetRawStringValueFromJsonNode(versionInfoJsonObject, JSON::GetUtilityString(Channel)).value_or("");
-        std::vector<std::string> packageFamilyNames = AppInstaller::Rest::GetUniqueItems(JSON::GetRawStringArrayFromJsonNode(versionInfoJsonObject, JSON::GetUtilityString(PackageFamilyNames)));
-        std::vector<std::string> productCodes = AppInstaller::Rest::GetUniqueItems(JSON::GetRawStringArrayFromJsonNode(versionInfoJsonObject, JSON::GetUtilityString(ProductCodes)));
+        std::string channel = JSON::GetRawStringValueFromJsonNode(versionInfoJsonObject, Channel).value_or("");
+        std::vector<std::string> packageFamilyNames = AppInstaller::Rest::GetUniqueItems(JSON::GetRawStringArrayFromJsonNode(versionInfoJsonObject, PackageFamilyNames));
+        std::vector<std::string> productCodes = AppInstaller::Rest::GetUniqueItems(JSON::GetRawStringArrayFromJsonNode(versionInfoJsonObject, ProductCodes));
 
         return IRestClient::VersionInfo{
             AppInstaller::Utility::VersionAndChannel{std::move(version.value()), std::move(channel)},

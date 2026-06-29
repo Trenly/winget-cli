@@ -1,114 +1,87 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 #include "pch.h"
 #include <AppInstallerDownloader.h>
 #include <AppInstallerRuntime.h>
+#include <AppInstallerStrings.h>
 #include <winget/HttpClientHelper.h>
-#include <winget/NetworkSettings.h>
-#include <winhttp.h>
+#include <winget/WebRequest.h>
+#include <winget/RestHelpers.h>
 
 namespace AppInstaller::Http
 {
     namespace
     {
+        Rest::HttpHeaders ToRestHeaders(const HttpClientHelper::HttpRequestHeaders& headers)
+        {
+            Rest::HttpHeaders result;
+            for (const auto& header : headers)
+            {
+                result.emplace(header.first, header.second);
+            }
+
+            return result;
+        }
+
         // If the caller does not pass in a user agent header, put the default one on the request.
-        void EnsureDefaultUserAgent(web::http::http_request& request)
+        void EnsureDefaultUserAgent(Rest::Request& request)
         {
-            static utility::string_t c_defaultUserAgent = Utility::ConvertToUTF16(AppInstaller::Runtime::GetDefaultUserAgent());
-
-            if (!request.headers().has(web::http::header_names::user_agent))
+            bool userAgentHeaderPresent = false;
+            for (const auto& header : request.Headers)
             {
-                request.headers().add(web::http::header_names::user_agent, c_defaultUserAgent);
-            }
-        }
-
-        void NativeHandleServerCertificateValidation(web::http::client::native_handle handle, const Certificates::PinningConfiguration& pinningConfiguration, ThreadLocalStorage::ThreadGlobals* threadGlobals)
-        {
-            decltype(threadGlobals->SetForCurrentThread()) previousThreadGlobals;
-            if (threadGlobals)
-            {
-                previousThreadGlobals = threadGlobals->SetForCurrentThread();
+                if (Utility::CaseInsensitiveEquals(header.first, std::wstring{ Utility::Http::Header::UserAgent }))
+                {
+                    userAgentHeaderPresent = true;
+                    break;
+                }
             }
 
-            HINTERNET requestHandle = reinterpret_cast<HINTERNET>(handle);
-
-            // Get certificate and pass along to pinning config
-            wil::unique_cert_context certContext;
-            DWORD bufferSize = sizeof(&certContext);
-            THROW_IF_WIN32_BOOL_FALSE(WinHttpQueryOption(requestHandle, WINHTTP_OPTION_SERVER_CERT_CONTEXT, &certContext, &bufferSize));
-
-            THROW_HR_IF(APPINSTALLER_CLI_ERROR_PINNED_CERTIFICATE_MISMATCH, !pinningConfiguration.Validate(certContext.get()));
-        }
-
-        std::chrono::seconds GetRetryAfter(const web::http::http_headers& headers)
-        {
-            auto retryAfterHeader = headers.find(web::http::header_names::retry_after);
-            if (retryAfterHeader != headers.end())
+            if (!userAgentHeaderPresent)
             {
-                return AppInstaller::Utility::GetRetryAfter(retryAfterHeader->second.c_str());
+                static std::wstring c_defaultUserAgent = Utility::ConvertToUTF16(AppInstaller::Runtime::GetDefaultUserAgent());
+                request.Headers.emplace(std::wstring{ Utility::Http::Header::UserAgent }, c_defaultUserAgent);
             }
-
-            return 0s;
         }
     }
 
-    HttpClientHelper::HttpClientHelper(std::shared_ptr<web::http::http_pipeline_stage> stage)
-        : m_defaultRequestHandlerStage(std::move(stage))
+    HttpClientHelper::HttpClientHelper()
+        : m_restHttpClient(Rest::CreateWinHttpClient())
+    {}
+
+    HttpClientHelper::HttpClientHelper(std::shared_ptr<Rest::IHttpClient> restHttpClient)
+        : m_restHttpClient(std::move(restHttpClient))
     {
-        const auto& proxyUri = Settings::Network().GetProxyUri();
-        if (proxyUri)
+        if (!m_restHttpClient)
         {
-            AICLI_LOG(Repo, Info, << "Setting proxy for REST HTTP Client helper to " << proxyUri.value());
-            m_clientConfig.set_proxy(web::web_proxy{ Utility::ConvertToUTF16(proxyUri.value()) });
-        }
-        else
-        {
-            AICLI_LOG(Repo, Info, << "REST HTTP Client helper does not use proxy");
+            m_restHttpClient = Rest::CreateWinHttpClient();
         }
     }
 
-    pplx::task<web::http::http_response> HttpClientHelper::Post(
-        const utility::string_t& uri,
-        const web::json::value& body,
+    Rest::Response HttpClientHelper::Post(
+        const std::wstring& uri,
+        const ::Json::Value& body,
         const HttpClientHelper::HttpRequestHeaders& headers,
         const HttpClientHelper::HttpRequestHeaders& authHeaders) const
     {
-        AICLI_LOG(Repo, Info, << "Sending http POST request to: " << utility::conversions::to_utf8string(uri));
-        web::http::client::http_client client = GetClient(uri);
-        web::http::http_request request{ web::http::methods::POST };
-        request.headers().set_content_type(web::http::details::mime_types::application_json);
-        request.set_body(body.serialize());
-
-        // Add headers
-        for (auto& pair : headers)
-        {
-            request.headers().add(pair.first, pair.second);
-        }
+        AICLI_LOG(Repo, Info, << "Sending http POST request to: " << Utility::ConvertToUTF8(uri));
+        Rest::Request request;
+        request.Method = L"POST";
+        request.Uri = uri;
+        request.Headers = ToRestHeaders(headers);
+        request.AuthHeaders = ToRestHeaders(authHeaders);
+        request.Body = Rest::Json::Serialize(body);
         EnsureDefaultUserAgent(request);
-
-        AICLI_LOG(Repo, Verbose, << "Http POST request details:\n" << utility::conversions::to_utf8string(request.to_string()));
-
-        // Add auth headers after logging
-        for (auto& pair : authHeaders)
-        {
-            request.headers().add(pair.first, pair.second);
-        }
-
-        return client.request(request);
+        return m_restHttpClient->Send(request);
     }
 
-    std::optional<web::json::value> HttpClientHelper::HandlePost(
-        const utility::string_t& uri,
-        const web::json::value& body,
+    std::optional<::Json::Value> HttpClientHelper::HandlePost(
+        const std::wstring& uri,
+        const ::Json::Value& body,
         const HttpClientHelper::HttpRequestHeaders& headers,
         const HttpClientHelper::HttpRequestHeaders& authHeaders,
-        const HttpResponseHandler& customHandler) const try
+        const HttpResponseHandler& customHandler) const
     {
-        web::http::http_response httpResponse;
-        Post(uri, body, headers, authHeaders).then([&httpResponse](const web::http::http_response& response)
-            {
-                httpResponse = response;
-            }).wait();
+        Rest::Response httpResponse = Post(uri, body, headers, authHeaders);
 
         if (customHandler)
         {
@@ -121,50 +94,29 @@ namespace AppInstaller::Http
 
         return ValidateAndExtractResponse(httpResponse);
     }
-    catch (web::http::http_exception& exception)
-    {
-        RethrowAsWilException(exception);
-    }
 
-    pplx::task<web::http::http_response> HttpClientHelper::Get(
-        const utility::string_t& uri,
+    Rest::Response HttpClientHelper::Get(
+        const std::wstring& uri,
         const HttpClientHelper::HttpRequestHeaders& headers,
         const HttpClientHelper::HttpRequestHeaders& authHeaders) const
     {
-        AICLI_LOG(Repo, Info, << "Sending http GET request to: " << utility::conversions::to_utf8string(uri));
-        web::http::client::http_client client = GetClient(uri);
-        web::http::http_request request{ web::http::methods::GET };
-        request.headers().set_content_type(web::http::details::mime_types::application_json);
-
-        // Add headers
-        for (auto& pair : headers)
-        {
-            request.headers().add(pair.first, pair.second);
-        }
+        AICLI_LOG(Repo, Info, << "Sending http GET request to: " << Utility::ConvertToUTF8(uri));
+        Rest::Request request;
+        request.Method = L"GET";
+        request.Uri = uri;
+        request.Headers = ToRestHeaders(headers);
+        request.AuthHeaders = ToRestHeaders(authHeaders);
         EnsureDefaultUserAgent(request);
-
-        AICLI_LOG(Repo, Verbose, << "Http GET request details:\n" << utility::conversions::to_utf8string(request.to_string()));
-
-        // Add auth headers after logging
-        for (auto& pair : authHeaders)
-        {
-            request.headers().add(pair.first, pair.second);
-        }
-
-        return client.request(request);
+        return m_restHttpClient->Send(request);
     }
 
-    std::optional<web::json::value> HttpClientHelper::HandleGet(
-        const utility::string_t& uri,
+    std::optional<::Json::Value> HttpClientHelper::HandleGet(
+        const std::wstring& uri,
         const HttpClientHelper::HttpRequestHeaders& headers,
         const HttpClientHelper::HttpRequestHeaders& authHeaders,
-        const HttpResponseHandler& customHandler) const try
+        const HttpResponseHandler& customHandler) const
     {
-        web::http::http_response httpResponse;
-        Get(uri, headers, authHeaders).then([&httpResponse](const web::http::http_response& response)
-            {
-                httpResponse = response;
-            }).wait();
+        Rest::Response httpResponse = Get(uri, headers, authHeaders);
 
         if (customHandler)
         {
@@ -176,111 +128,21 @@ namespace AppInstaller::Http
         }
 
         return ValidateAndExtractResponse(httpResponse);
-    }
-    catch (web::http::http_exception& exception)
-    {
-        RethrowAsWilException(exception);
     }
 
     void HttpClientHelper::SetPinningConfiguration(const Certificates::PinningConfiguration& configuration, std::shared_ptr<ThreadLocalStorage::ThreadGlobals> threadGlobals)
     {
-        m_clientConfig.set_nativehandle_servercertificate_validation([pinConfig = configuration, globals = std::move(threadGlobals)](web::http::client::native_handle handle)
-            {
-                NativeHandleServerCertificateValidation(handle, pinConfig, globals.get());
-            });
+        if (!m_restHttpClient)
+        {
+            m_restHttpClient = Rest::CreateWinHttpClient();
+        }
+
+        m_restHttpClient->SetPinningConfiguration(configuration, std::move(threadGlobals));
     }
 
-    web::http::client::http_client HttpClientHelper::GetClient(const utility::string_t& uri) const
+    std::optional<::Json::Value> HttpClientHelper::ValidateAndExtractResponse(const Rest::Response& response) const
     {
-        web::http::client::http_client client{ uri, m_clientConfig };
-
-        // Add default custom handlers if any.
-        if (m_defaultRequestHandlerStage)
-        {
-            client.add_handler(m_defaultRequestHandlerStage);
-        }
-
-        return client;
+        return Rest::ValidateAndExtractJsonResponse(response);
     }
 
-    std::optional<web::json::value> HttpClientHelper::ValidateAndExtractResponse(const web::http::http_response& response) const
-    {
-        AICLI_LOG(Repo, Info, << "Response status: " << response.status_code());
-        // Ensure that we wait for the content to be ready before we log it; otherwise it will be truncated.
-        AICLI_LOG_LARGE_STRING(Repo, Verbose, << "Response details:",
-            response.content_ready().then([&](const web::http::http_response&) { return utility::conversions::to_utf8string(response.to_string()); }).get());
-
-        std::optional<web::json::value> result;
-        switch (response.status_code())
-        {
-        case web::http::status_codes::OK:
-            result = ExtractJsonResponse(response);
-            break;
-
-        case web::http::status_codes::NotFound:
-            THROW_HR(APPINSTALLER_CLI_ERROR_RESTAPI_ENDPOINT_NOT_FOUND);
-
-        case web::http::status_codes::NoContent:
-            result = {};
-            break;
-
-        case web::http::status_codes::BadRequest:
-            THROW_HR(APPINSTALLER_CLI_ERROR_RESTAPI_INTERNAL_ERROR);
-
-        case web::http::status_codes::TooManyRequests:
-        case web::http::status_codes::ServiceUnavailable:
-            THROW_EXCEPTION(AppInstaller::Utility::ServiceUnavailableException(GetRetryAfter(response.headers())));
-
-        default:
-            THROW_HR(MAKE_HRESULT(SEVERITY_ERROR, FACILITY_HTTP, response.status_code()));
-        }
-
-        return result;
-    }
-
-    std::optional<web::json::value> HttpClientHelper::ExtractJsonResponse(const web::http::http_response& response) const
-    {
-        utility::string_t contentType = response.headers().content_type();
-
-        THROW_HR_IF(APPINSTALLER_CLI_ERROR_RESTAPI_UNSUPPORTED_MIME_TYPE,
-            !contentType._Starts_with(web::http::details::mime_types::application_json));
-
-        return response.extract_json().get();
-    }
-
-    [[noreturn]] void HttpClientHelper::RethrowAsWilException(const web::http::http_exception& exception)
-    {
-        // Some http_exceptions have no error code; default to REST internal error.
-        HRESULT toThrow = APPINSTALLER_CLI_ERROR_RESTAPI_INTERNAL_ERROR;
-
-        // 99% of the time this code comes from GetLastError.
-        // In a few cases it will be 400; as in the HTTP status code.
-        // Since that is the one case that http_client_winhttp.cpp uses, we map it specifically.
-        // In the event that this makes no sense, ERROR_THREAD_MODE_ALREADY_BACKGROUND is Win32 error 400.
-        int errorValue = exception.error_code().value();
-        if (errorValue == web::http::status_codes::BadRequest)
-        {
-            toThrow = MAKE_HRESULT(SEVERITY_ERROR, FACILITY_HTTP, web::http::status_codes::BadRequest);
-        }
-        else if (errorValue)
-        {
-            toThrow = HRESULT_FROM_WIN32(errorValue);
-        }
-
-        // Ensure that sufficient stack space remains to include the message.
-        // We have seen rare crashes due to running out of stack space in this path
-        // so we will only include the message if there is enough space.
-        // PrintLoggingMessage usage in WIL always creates a 4K stack buffer (2K of wchar_t),
-        // so we leave some on top of that as well as the buffer is kept alive into further calls.
-        static constexpr size_t s_msgMinimum = 5 * 1024;
-
-        if (Runtime::IsStackAvailable(s_msgMinimum))
-        {
-            THROW_HR_MSG(toThrow, "%hs", exception.what());
-        }
-        else
-        {
-            THROW_HR(toThrow);
-        }
-    }
 }

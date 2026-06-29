@@ -31,6 +31,9 @@
     <Filter Include="Authentication">
       <UniqueIdentifier>{9dd9ab66-00f0-4b18-90ca-6c5da3dc01c4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="RestHelpers">
+      <UniqueIdentifier>{1a5a89ef-6076-4709-b2bf-7896f9f39689}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -198,6 +201,9 @@
     <ClInclude Include="Public\winget\Rest.h">
       <Filter>Public\winget</Filter>
     </ClInclude>
+    <ClInclude Include="Public\winget\RestHelpers.h">
+      <Filter>Public\winget</Filter>
+    </ClInclude>
     <ClInclude Include="Public\winget\MSStoreDownload.h">
       <Filter>Public\winget</Filter>
     </ClInclude>
@@ -215,6 +221,9 @@
     </ClInclude>
     <ClInclude Include="Public\winget\StdErrLogger.h">
       <Filter>Public\winget</Filter>
+    </ClInclude>
+    <ClInclude Include="RestHelpers\IHttpClient.h">
+      <Filter>RestHelpers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -373,6 +382,12 @@
     </ClCompile>
     <ClCompile Include="Rest.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RestHelpers\Json.cpp">
+      <Filter>RestHelpers</Filter>
+    </ClCompile>
+    <ClCompile Include="RestHelpers\WinHttpClient.cpp">
+      <Filter>RestHelpers</Filter>
     </ClCompile>
     <ClCompile Include="MSStoreDownload.cpp">
       <Filter>Source Files</Filter>

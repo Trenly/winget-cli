@@ -28,7 +28,7 @@ namespace AppInstaller::Repository::Rest::Schema
         constexpr std::string_view RequiredQueryParameters = "RequiredQueryParameters"sv;
     }
 
-    IRestClient::Information InformationResponseDeserializer::Deserialize(const web::json::value& dataObject) const
+    IRestClient::Information InformationResponseDeserializer::Deserialize(const Json::Value& dataObject) const
     {
         // Get information result from json output.
         std::optional<IRestClient::Information> information = DeserializeInformation(dataObject);
@@ -38,17 +38,17 @@ namespace AppInstaller::Repository::Rest::Schema
         return information.value();
     }
 
-    std::optional<IRestClient::Information> InformationResponseDeserializer::DeserializeInformation(const web::json::value& dataObject) const
+    std::optional<IRestClient::Information> InformationResponseDeserializer::DeserializeInformation(const Json::Value& dataObject) const
     {
         try
         {
-            if (dataObject.is_null())
+            if (dataObject.isNull())
             {
                 AICLI_LOG(Repo, Error, << "Missing json object.");
                 return {};
             }
 
-            std::optional<std::reference_wrapper<const web::json::value>> data = JSON::GetJsonValueFromNode(dataObject, JSON::GetUtilityString(Data));
+            std::optional<std::reference_wrapper<const Json::Value>> data = JSON::GetJsonValueFromNode(dataObject, Data);
             if (!data)
             {
                 AICLI_LOG(Repo, Error, << "Missing data");
@@ -56,14 +56,14 @@ namespace AppInstaller::Repository::Rest::Schema
             }
 
             const auto& dataValue = data.value().get();
-            std::optional<std::string> sourceId = JSON::GetRawStringValueFromJsonNode(dataValue, JSON::GetUtilityString(SourceIdentifier));
+            std::optional<std::string> sourceId = JSON::GetRawStringValueFromJsonNode(dataValue, SourceIdentifier);
             if (!JSON::IsValidNonEmptyStringValue(sourceId))
             {
                 AICLI_LOG(Repo, Error, << "Missing source identifier");
                 return {};
             }
 
-            std::vector<std::string> allVersions = JSON::GetRawStringArrayFromJsonNode(dataValue, JSON::GetUtilityString(ServerSupportedVersions));
+            std::vector<std::string> allVersions = JSON::GetRawStringArrayFromJsonNode(dataValue, ServerSupportedVersions);
             if (allVersions.size() == 0)
             {
                 AICLI_LOG(Repo, Error, << "Missing supported versions.");
@@ -72,12 +72,12 @@ namespace AppInstaller::Repository::Rest::Schema
 
             IRestClient::Information info{ std::move(sourceId.value()), std::move(allVersions) };
 
-            auto agreements = JSON::GetJsonValueFromNode(dataValue, JSON::GetUtilityString(SourceAgreements));
+            auto agreements = JSON::GetJsonValueFromNode(dataValue, SourceAgreements);
             if (agreements)
             {
                 const auto& agreementsValue = agreements.value().get();
 
-                auto agreementsIdentifier = JSON::GetRawStringValueFromJsonNode(agreementsValue, JSON::GetUtilityString(SourceAgreementsIdentifier));
+                auto agreementsIdentifier = JSON::GetRawStringValueFromJsonNode(agreementsValue, SourceAgreementsIdentifier);
                 if (!JSON::IsValidNonEmptyStringValue(agreementsIdentifier))
                 {
                     AICLI_LOG(Repo, Error, << "SourceAgreements node exists but AgreementsIdentifier is missing.");
@@ -86,26 +86,26 @@ namespace AppInstaller::Repository::Rest::Schema
 
                 info.SourceAgreementsIdentifier = std::move(agreementsIdentifier.value());
 
-                auto agreementsContent = JSON::GetRawJsonArrayFromJsonNode(agreementsValue, JSON::GetUtilityString(SourceAgreementsContent));
+                auto agreementsContent = JSON::GetRawJsonArrayFromJsonNode(agreementsValue, SourceAgreementsContent);
                 if (agreementsContent)
                 {
                     for (auto const& agreementNode : agreementsContent.value().get())
                     {
                         IRestClient::SourceAgreementEntry agreementEntry;
 
-                        std::optional<std::string> label = JSON::GetRawStringValueFromJsonNode(agreementNode, JSON::GetUtilityString(SourceAgreementLabel));
+                        std::optional<std::string> label = JSON::GetRawStringValueFromJsonNode(agreementNode, SourceAgreementLabel);
                         if (JSON::IsValidNonEmptyStringValue(label))
                         {
                             agreementEntry.Label = std::move(label.value());
                         }
 
-                        std::optional<std::string> text = JSON::GetRawStringValueFromJsonNode(agreementNode, JSON::GetUtilityString(SourceAgreementText));
+                        std::optional<std::string> text = JSON::GetRawStringValueFromJsonNode(agreementNode, SourceAgreementText);
                         if (JSON::IsValidNonEmptyStringValue(text))
                         {
                             agreementEntry.Text = std::move(text.value());
                         }
 
-                        std::optional<std::string> url = JSON::GetRawStringValueFromJsonNode(agreementNode, JSON::GetUtilityString(SourceAgreementUrl));
+                        std::optional<std::string> url = JSON::GetRawStringValueFromJsonNode(agreementNode, SourceAgreementUrl);
                         if (JSON::IsValidNonEmptyStringValue(url))
                         {
                             agreementEntry.Url = std::move(url.value());
@@ -119,10 +119,10 @@ namespace AppInstaller::Repository::Rest::Schema
                 }
             }
 
-            info.RequiredPackageMatchFields = JSON::GetRawStringArrayFromJsonNode(dataValue, JSON::GetUtilityString(RequiredPackageMatchFields));
-            info.UnsupportedPackageMatchFields = JSON::GetRawStringArrayFromJsonNode(dataValue, JSON::GetUtilityString(UnsupportedPackageMatchFields));
-            info.RequiredQueryParameters = JSON::GetRawStringArrayFromJsonNode(dataValue, JSON::GetUtilityString(RequiredQueryParameters));
-            info.UnsupportedQueryParameters = JSON::GetRawStringArrayFromJsonNode(dataValue, JSON::GetUtilityString(UnsupportedQueryParameters));
+            info.RequiredPackageMatchFields = JSON::GetRawStringArrayFromJsonNode(dataValue, RequiredPackageMatchFields);
+            info.UnsupportedPackageMatchFields = JSON::GetRawStringArrayFromJsonNode(dataValue, UnsupportedPackageMatchFields);
+            info.RequiredQueryParameters = JSON::GetRawStringArrayFromJsonNode(dataValue, RequiredQueryParameters);
+            info.UnsupportedQueryParameters = JSON::GetRawStringArrayFromJsonNode(dataValue, UnsupportedQueryParameters);
 
             info.Authentication = ParseAuthenticationInfo(dataValue, ParseAuthenticationInfoType::Source);
 

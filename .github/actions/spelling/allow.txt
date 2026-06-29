@@ -45,8 +45,6 @@ conemu
 contoso
 COSTDEFERRED
 cotaskmem
-cpprest
-cpprestsdk
 cppwinrt
 createnew
 createpintable

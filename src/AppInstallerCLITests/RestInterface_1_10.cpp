@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 #include "pch.h"
 #include "TestCommon.h"
@@ -23,10 +23,9 @@ namespace
 
     struct GoodManifest_AllFields
     {
-        utility::string_t GetSampleManifest_AllFields()
+        std::wstring GetSampleManifest_AllFields()
         {
-            return _XPLATSTR(
-                R"delimiter(
+            return LR"delimiter(
         {
           "Data": {
             "PackageIdentifier": "Foo.Bar",
@@ -118,7 +117,7 @@ namespace
                       "IconSha256": "69D84CA8899800A5575CE31798293CD4FEBAB1D734A07C2E51E56A28E0DF8321"
                     }]
                   }
-                ],)delimiter") _XPLATSTR(R"delimiter(
+                ],)delimiter" LR"delimiter(
                 "Installers": [
                   {
                     "InstallerSha256": "011048877dfaef109801b3f3ab2b60afc74f3fc4f7b3430e0c897f5da1df84b6",
@@ -230,7 +229,7 @@ namespace
             ]
           },
           "ContinuationToken": "abcd"
-        })delimiter");
+        })delimiter";
         }
 
         void VerifyLocalizations_AllFields(const AppInstaller::Manifest::Manifest& manifest)
@@ -393,8 +392,8 @@ namespace
 TEST_CASE("GetManifests_GoodResponse_V1_10", "[RestSource][Interface_1_10]")
 {
     GoodManifest_AllFields sampleManifest;
-    utility::string_t sample = sampleManifest.GetSampleManifest_AllFields();
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, std::move(sample)) };
+    std::wstring sample = sampleManifest.GetSampleManifest_AllFields();
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, std::move(sample)) };
     Interface v1_10{ TestRestUriString, std::move(helper), {} };
     std::vector<Manifest> manifests = v1_10.GetManifests("Foo.Bar");
     REQUIRE(manifests.size() == 1);

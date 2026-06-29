@@ -4,8 +4,8 @@
 #include "Rest/Schema/IRestClient.h"
 #include <AppInstallerDownloader.h>
 #include <AppInstallerSHA256.h>
+#include <json/json.h>
 #include <winget/Settings.h>
-#include <cpprest/json.h>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -19,7 +19,7 @@ namespace AppInstaller::Repository::Rest
         std::optional<Schema::IRestClient::Information> Get(const std::wstring& endpoint, const std::optional<std::string>& customHeader, std::string_view caller);
 
         // Stores the information response as appropriate.
-        void Cache(const std::wstring& endpoint, const std::optional<std::string>& customHeader, std::string_view caller, const Utility::CacheControlPolicy& cacheControl, web::json::value response);
+        void Cache(const std::wstring& endpoint, const std::optional<std::string>& customHeader, std::string_view caller, const Utility::CacheControlPolicy& cacheControl, Json::Value response);
 
     private:
         struct CacheItem
@@ -27,7 +27,7 @@ namespace AppInstaller::Repository::Rest
             std::wstring Endpoint;
             Utility::SHA256::HashBuffer Hash;
             uint64_t UnixEpochExpiration = 0;
-            web::json::value Data;
+            Json::Value Data;
         };
 
         // Reads from the cache, constructing our view of the items it contains.
