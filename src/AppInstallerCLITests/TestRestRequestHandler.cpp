@@ -7,7 +7,7 @@
 #include <Rest/Schema/IRestClient.h>
 
 std::shared_ptr<TestRestRequestHandler> GetTestRestRequestHandler(
-    const web::http::status_code statusCode, const utility::string_t& sampleResponseString, const utility::string_t& mimeType)
+    unsigned short statusCode, const utility::string_t& sampleResponseString, const utility::string_t& mimeType)
 {
     return std::make_shared<TestRestRequestHandler>([statusCode, sampleResponseString, mimeType](web::http::http_request) ->
         pplx::task<web::http::http_response>
@@ -30,7 +30,7 @@ std::shared_ptr<TestRestRequestHandler> GetTestRestRequestHandler(
 }
 
 std::shared_ptr<TestRestRequestHandler> GetTestRestRequestHandler(
-    std::function<web::http::status_code(const web::http::http_request& request)> handler)
+    std::function<unsigned short(const web::http::http_request& request)> handler)
 {
     return std::make_shared<TestRestRequestHandler>([handler = std::move(handler)](web::http::http_request request) ->
         pplx::task<web::http::http_response>
@@ -46,7 +46,7 @@ std::shared_ptr<TestRestRequestHandler> GetTestRestRequestHandler(
 }
 
 std::shared_ptr<TestRestRequestHandler> GetHeaderVerificationHandler(
-    const web::http::status_code statusCode, const utility::string_t& sampleResponseString, const std::pair<utility::string_t, utility::string_t>& header, web::http::status_code statusCodeOnFailure)
+    unsigned short statusCode, const utility::string_t& sampleResponseString, const std::pair<utility::string_t, utility::string_t>& header, unsigned short statusCodeOnFailure)
 {
     return std::make_shared<TestRestRequestHandler>([statusCode, sampleResponseString, header, statusCodeOnFailure](web::http::http_request request) ->
         pplx::task<web::http::http_response>

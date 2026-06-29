@@ -8,6 +8,7 @@
 #include <winget/ManifestJSONParser.h>
 #include <winget/ManifestValidation.h>
 #include <winget/Rest.h>
+#include <winhttp.h>
 #include "Rest/Schema/CommonRestConstants.h"
 #include "Rest/Schema/SearchResponseParser.h"
 #include "Rest/Schema/SearchRequestComposer.h"
@@ -56,7 +57,7 @@ namespace AppInstaller::Repository::Rest::Schema::V1_0
             AppInstaller::Http::HttpClientHelper::HttpResponseHandlerResult result;
             result.UseDefaultHandling = true;
 
-            if (response.status_code() == web::http::status_codes::NotFound &&
+            if (response.status_code() == HTTP_STATUS_NOT_FOUND &&
                 response.headers().content_type()._Starts_with(web::http::details::mime_types::application_json))
             {
                 auto responseJson = response.extract_json().get();

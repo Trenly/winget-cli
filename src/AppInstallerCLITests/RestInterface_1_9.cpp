@@ -383,7 +383,7 @@ TEST_CASE("GetManifests_GoodResponse_V1_9", "[RestSource][Interface_1_9]")
 {
     GoodManifest_AllFields sampleManifest;
     utility::string_t sample = sampleManifest.GetSampleManifest_AllFields();
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, std::move(sample)) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, std::move(sample)) };
     Interface v1_9{ TestRestUriString, std::move(helper), {} };
     std::vector<Manifest> manifests = v1_9.GetManifests("Foo.Bar");
     REQUIRE(manifests.size() == 1);

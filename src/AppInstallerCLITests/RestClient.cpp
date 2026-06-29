@@ -114,7 +114,7 @@ TEST_CASE("GetInformation_Success", "[RestSource]")
               ]
         }})delimiter");
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, sample) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, sample) };
     IRestClient::Information information = RestClient::GetInformation(TestRestUri, {}, {}, helper);
     REQUIRE(information.SourceIdentifier == "Source123");
     REQUIRE(information.ServerSupportedVersions.size() == 2);
@@ -176,7 +176,7 @@ TEST_CASE("GetInformation_WithAuthenticationInfo_Success", "[RestSource]")
               }
         }})delimiter");
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, sample) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, sample) };
     IRestClient::Information information = RestClient::GetInformation(TestRestUri, {}, {}, helper);
     REQUIRE(information.SourceIdentifier == "Source123");
     REQUIRE(information.ServerSupportedVersions.size() == 1);
@@ -219,7 +219,7 @@ TEST_CASE("GetInformation_Fail_AgreementsWithoutIdentifier", "[RestSource]")
               }
         }})delimiter");
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, sample) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, sample) };
     REQUIRE_THROWS_HR(RestClient::GetInformation(TestRestUri, {}, {}, helper), APPINSTALLER_CLI_ERROR_UNSUPPORTED_RESTSOURCE);
 }
 
@@ -237,7 +237,7 @@ TEST_CASE("GetInformation_Fail_InvalidMicrosoftEntraIdInfo", "[RestSource]")
               }
         }})delimiter");
 
-    HttpClientHelper helper1{ GetTestRestRequestHandler(web::http::status_codes::OK, sample1) };
+    HttpClientHelper helper1{ GetTestRestRequestHandler(HTTP_STATUS_OK, sample1) };
     REQUIRE_THROWS_HR(RestClient::GetInformation(TestRestUri, {}, {}, helper1), APPINSTALLER_CLI_ERROR_UNSUPPORTED_RESTSOURCE);
 
     utility::string_t sample2 = _XPLATSTR(
@@ -256,7 +256,7 @@ TEST_CASE("GetInformation_Fail_InvalidMicrosoftEntraIdInfo", "[RestSource]")
               }
         }})delimiter");
 
-    HttpClientHelper helper2{ GetTestRestRequestHandler(web::http::status_codes::OK, sample2) };
+    HttpClientHelper helper2{ GetTestRestRequestHandler(HTTP_STATUS_OK, sample2) };
     REQUIRE_THROWS_HR(RestClient::GetInformation(TestRestUri, {}, {}, helper2), APPINSTALLER_CLI_ERROR_UNSUPPORTED_RESTSOURCE);
 
     utility::string_t sample3 = _XPLATSTR(
@@ -274,7 +274,7 @@ TEST_CASE("GetInformation_Fail_InvalidMicrosoftEntraIdInfo", "[RestSource]")
               }
         }})delimiter");
 
-    HttpClientHelper helper3{ GetTestRestRequestHandler(web::http::status_codes::OK, sample3) };
+    HttpClientHelper helper3{ GetTestRestRequestHandler(HTTP_STATUS_OK, sample3) };
     REQUIRE_THROWS_HR(RestClient::GetInformation(TestRestUri, {}, {}, helper3), APPINSTALLER_CLI_ERROR_UNSUPPORTED_RESTSOURCE);
 
     utility::string_t sample4 = _XPLATSTR(
@@ -289,7 +289,7 @@ TEST_CASE("GetInformation_Fail_InvalidMicrosoftEntraIdInfo", "[RestSource]")
               }
         }})delimiter");
 
-    HttpClientHelper helper4{ GetTestRestRequestHandler(web::http::status_codes::OK, sample4) };
+    HttpClientHelper helper4{ GetTestRestRequestHandler(HTTP_STATUS_OK, sample4) };
     Authentication::AuthenticationArguments authArgs;
     authArgs.Mode = Authentication::AuthenticationMode::Silent;
     Version version_1_7{ "1.7.0" };
@@ -307,7 +307,7 @@ TEST_CASE("RestClientCreate_UnsupportedVersion", "[RestSource]")
                 "2.0.0"]
         }})delimiter");
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, sample) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, sample) };
     REQUIRE_THROWS_HR(CreateRestClient("https://restsource.com/api", {}, {}, helper), APPINSTALLER_CLI_ERROR_UNSUPPORTED_RESTSOURCE);
 }
 
@@ -325,7 +325,7 @@ TEST_CASE("RestClientCreate_UnsupportedAuthenticationMethod", "[RestSource]")
               }
         }})delimiter");
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, sample) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, sample) };
     Authentication::AuthenticationArguments authArgs;
     authArgs.Mode = Authentication::AuthenticationMode::Silent;
     REQUIRE_THROWS_HR(CreateRestClient("https://restsource.com/api", {}, {}, helper, authArgs), APPINSTALLER_CLI_ERROR_AUTHENTICATION_TYPE_NOT_SUPPORTED);
@@ -348,7 +348,7 @@ TEST_CASE("RestClientCreate_InvalidAuthenticationArguments", "[RestSource]")
               }
         }})delimiter");
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, sample) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, sample) };
     Authentication::AuthenticationArguments authArgs;
     authArgs.Mode = Authentication::AuthenticationMode::Unknown;
     REQUIRE_THROWS_HR(CreateRestClient("https://restsource.com/api", {}, {}, helper, authArgs), E_UNEXPECTED);
@@ -365,7 +365,7 @@ TEST_CASE("RestClientCreate_1.0_Success", "[RestSource]")
                 "2.0.0"]
         }})delimiter");
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, sample) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, sample) };
     RestClient client = CreateRestClient(TestRestUri, {}, {}, helper);
     REQUIRE(client.GetSourceIdentifier() == "Source123");
 }
@@ -402,7 +402,7 @@ TEST_CASE("RestClientCreate_1.1_Success", "[RestSource]")
               ]
         }})delimiter");
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, sample) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, sample) };
     RestClient client = CreateRestClient(TestRestUri, {}, {}, helper);
     REQUIRE(client.GetSourceIdentifier() == "Source123");
     auto information = client.GetSourceInformation();
@@ -468,7 +468,7 @@ TEST_CASE("RestClientCreate_1.7_Success", "[RestSource]")
 
     Authentication::AuthenticationArguments authArgs;
     authArgs.Mode = Authentication::AuthenticationMode::Silent;
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, sample) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, sample) };
     RestClient client = CreateRestClient(TestRestUri, {}, {}, helper, authArgs);
     REQUIRE(client.GetSourceIdentifier() == "Source123");
     auto information = client.GetSourceInformation();

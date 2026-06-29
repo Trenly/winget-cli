@@ -332,7 +332,7 @@ TEST_CASE("Search_GoodResponse", "[RestSource][Interface_1_0]")
             }]
         })delimiter");
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, std::move(sample)) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, std::move(sample)) };
     Interface v1{ TestRestUriString, std::move(helper) };
     Schema::IRestClient::SearchResult searchResponse = v1.Search({});
     REQUIRE(searchResponse.Matches.size() == 1);
@@ -370,7 +370,7 @@ TEST_CASE("Search_GoodResponse_AllFields", "[RestSource][Interface_1_0]")
             }]
         })delimiter");
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, std::move(sample)) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, std::move(sample)) };
     Interface v1{ TestRestUriString, std::move(helper) };
     Schema::IRestClient::SearchResult searchResponse = v1.Search({});
     REQUIRE(searchResponse.Matches.size() == 1);
@@ -392,7 +392,7 @@ TEST_CASE("Search_GoodResponse_404AsEmpty", "[RestSource][Interface_1_0]")
     utility::string_t notFoundResponse = _XPLATSTR(
         R"delimiter({"code":"DataNotFound","data":[],"details":[],"innererror":{"code":"DataNotFound","data":[],"details":[],"message":"Product is not present","source":"StoreEdgeFD"},"message":"Product is not present","source":"StoreEdgeFD"})delimiter");
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::NotFound, std::move(notFoundResponse)) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_NOT_FOUND, std::move(notFoundResponse)) };
     Interface v1{ TestRestUriString, std::move(helper) };
     Schema::IRestClient::SearchResult searchResponse = v1.Search({});
     REQUIRE(searchResponse.Matches.size() == 0);
@@ -420,7 +420,7 @@ TEST_CASE("Search_ContinuationToken", "[RestSource][Interface_1_0]")
            "ContinuationToken" : "abcd-ct="
         })delimiter");
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, std::move(sample)) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, std::move(sample)) };
     Interface v1{ TestRestUriString, std::move(helper) };
     SearchRequest request{};
     request.MaximumResults = 9;
@@ -445,14 +445,14 @@ TEST_CASE("Search_BadResponse_NoVersions", "[RestSource][Interface_1_0]")
               "Versions": null }]
         })delimiter");
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, std::move(sample)) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, std::move(sample)) };
     Interface v1{ TestRestUriString, std::move(helper) };
     REQUIRE_THROWS_HR(v1.Search({}), APPINSTALLER_CLI_ERROR_RESTSOURCE_INVALID_DATA);
 }
 
 TEST_CASE("Search_BadResponse_NotFoundCode", "[RestSource][Interface_1_0]")
 {
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::NotFound) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_NOT_FOUND) };
     Interface v1{ TestRestUriString, std::move(helper) };
     REQUIRE_THROWS_HR(v1.Search({}), APPINSTALLER_CLI_ERROR_RESTAPI_ENDPOINT_NOT_FOUND);
 }
@@ -460,7 +460,7 @@ TEST_CASE("Search_BadResponse_NotFoundCode", "[RestSource][Interface_1_0]")
 TEST_CASE("Search_Optimized_ManifestResponse", "[RestSource][Interface_1_0]")
 {
     utility::string_t sample = GetGoodManifest_RequiredFields();
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, std::move(sample)) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, std::move(sample)) };
     AppInstaller::Repository::SearchRequest request;
     PackageMatchFilter filter{ PackageMatchField::Id, MatchType::Exact, "Foo" };
     request.Filters.emplace_back(std::move(filter));
@@ -490,7 +490,7 @@ TEST_CASE("Search_Optimized_ManifestResponse", "[RestSource][Interface_1_0]")
 
 TEST_CASE("Search_Optimized_ManifestResponse_MultipleVersions", "[RestSource][Interface_1_0]")
 {
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, GetManifestsResponse_MultipleVersions()) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, GetManifestsResponse_MultipleVersions()) };
     AppInstaller::Repository::SearchRequest request;
     PackageMatchFilter filter{ PackageMatchField::Id, MatchType::Exact, "Foo.Bar" };
     request.Filters.emplace_back(std::move(filter));
@@ -506,7 +506,7 @@ TEST_CASE("Search_Optimized_ManifestResponse_MultipleVersions", "[RestSource][In
 
 TEST_CASE("Search_Optimized_NoResponse_NotFoundCode", "[RestSource][Interface_1_0]")
 {
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::NotFound) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_NOT_FOUND) };
     AppInstaller::Repository::SearchRequest request;
     PackageMatchFilter filter{ PackageMatchField::Id, MatchType::Exact, "Foo" };
     request.Filters.emplace_back(std::move(filter));
@@ -518,7 +518,7 @@ TEST_CASE("GetManifests_GoodResponse", "[RestSource][Interface_1_0]")
 {
     GoodManifest_AllFields sampleManifest;
     utility::string_t sample = sampleManifest.GetSampleManifest_AllFields();
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, std::move(sample)) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, std::move(sample)) };
     Interface v1{ TestRestUriString, std::move(helper) };
     std::vector<Manifest> manifests = v1.GetManifests("Foo.Bar");
     REQUIRE(manifests.size() == 1);
@@ -539,7 +539,7 @@ TEST_CASE("GetManifests_GoodResponse_404AsEmpty", "[RestSource][Interface_1_0]")
     utility::string_t notFoundResponse = _XPLATSTR(
         R"delimiter({"code":"DataNotFound","data":[],"details":[],"innererror":{"code":"DataNotFound","data":[],"details":[],"message":"Product is not present","source":"StoreEdgeFD"},"message":"Product is not present","source":"StoreEdgeFD"})delimiter");
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::NotFound, std::move(notFoundResponse)) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_NOT_FOUND, std::move(notFoundResponse)) };
     Interface v1{ TestRestUriString, std::move(helper) };
     std::vector<Manifest> manifests = v1.GetManifests("Foo.Bar");
     REQUIRE(manifests.size() == 0);
@@ -547,7 +547,7 @@ TEST_CASE("GetManifests_GoodResponse_404AsEmpty", "[RestSource][Interface_1_0]")
 
 TEST_CASE("GetManifests_GoodResponse_MultipleVersions", "[RestSource][Interface_1_0]")
 {
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, GetManifestsResponse_MultipleVersions()) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, GetManifestsResponse_MultipleVersions()) };
     Interface v1{ TestRestUriString, std::move(helper) };
 
     // GetManifests
@@ -571,14 +571,14 @@ TEST_CASE("GetManifests_BadResponse_SuccessCode", "[RestSource][Interface_1_0]")
         }
     })delimiter");
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, std::move(badManifest)) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, std::move(badManifest)) };
     Interface v1{ TestRestUriString, std::move(helper) };
     REQUIRE_THROWS_HR(v1.GetManifests("Foo.Bar"), APPINSTALLER_CLI_ERROR_RESTSOURCE_INVALID_DATA);
 }
 
 TEST_CASE("GetManifests_NotFoundCode", "[RestSource][Interface_1_0]")
 {
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::NotFound) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_NOT_FOUND) };
     Interface v1{ TestRestUriString, std::move(helper) };
     REQUIRE_THROWS_HR(v1.GetManifests("Foo.Bar"), APPINSTALLER_CLI_ERROR_RESTAPI_ENDPOINT_NOT_FOUND);
 }
@@ -611,7 +611,7 @@ TEST_CASE("GetManifests_GoodResponse_UnknownInstaller", "[RestSource][Interface_
         }
     })delimiter");
 
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, std::move(msstoreInstallerResponse)) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, std::move(msstoreInstallerResponse)) };
     Interface v1{ TestRestUriString, std::move(helper) };
     std::vector<Manifest> manifests = v1.GetManifests("Foo.Bar");
     REQUIRE(manifests.size() == 1);
@@ -625,7 +625,7 @@ TEST_CASE("GetManifests_GoodResponse_UnknownInstaller", "[RestSource][Interface_
 
 TEST_CASE("GetManifestByVersion_GoodResponse_MultipleVersions_VersionFound", "[RestSource][Interface_1_0]")
 {
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, GetManifestsResponse_MultipleVersions()) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, GetManifestsResponse_MultipleVersions()) };
     Interface v1{ TestRestUriString, std::move(helper) };
 
     // GetManifests
@@ -636,7 +636,7 @@ TEST_CASE("GetManifestByVersion_GoodResponse_MultipleVersions_VersionFound", "[R
 
 TEST_CASE("GetManifestByVersion_GoodResponse_MultipleVersions_VersionNotFound", "[RestSource][Interface_1_0]")
 {
-    HttpClientHelper helper{ GetTestRestRequestHandler(web::http::status_codes::OK, GetManifestsResponse_MultipleVersions()) };
+    HttpClientHelper helper{ GetTestRestRequestHandler(HTTP_STATUS_OK, GetManifestsResponse_MultipleVersions()) };
     Interface v1{ TestRestUriString, std::move(helper) };
 
     // GetManifests

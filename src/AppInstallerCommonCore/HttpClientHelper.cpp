@@ -11,6 +11,9 @@ namespace AppInstaller::Http
 {
     namespace
     {
+		// 429 dosn't exist in winhttp.h, so we define it locally.
+        constexpr int HttpStatusTooManyRequests = 429;
+
         // If the caller does not pass in a user agent header, put the default one on the request.
         void EnsureDefaultUserAgent(web::http::http_request& request)
         {
@@ -213,22 +216,22 @@ namespace AppInstaller::Http
         std::optional<web::json::value> result;
         switch (response.status_code())
         {
-        case web::http::status_codes::OK:
+        case HTTP_STATUS_OK:
             result = ExtractJsonResponse(response);
             break;
 
-        case web::http::status_codes::NotFound:
+        case HTTP_STATUS_NOT_FOUND:
             THROW_HR(APPINSTALLER_CLI_ERROR_RESTAPI_ENDPOINT_NOT_FOUND);
 
-        case web::http::status_codes::NoContent:
+        case HTTP_STATUS_NO_CONTENT:
             result = {};
             break;
 
-        case web::http::status_codes::BadRequest:
+        case HTTP_STATUS_BAD_REQUEST:
             THROW_HR(APPINSTALLER_CLI_ERROR_RESTAPI_INTERNAL_ERROR);
 
-        case web::http::status_codes::TooManyRequests:
-        case web::http::status_codes::ServiceUnavailable:
+        case HttpStatusTooManyRequests:
+        case HTTP_STATUS_SERVICE_UNAVAIL:
             THROW_EXCEPTION(AppInstaller::Utility::ServiceUnavailableException(GetRetryAfter(response.headers())));
 
         default:
@@ -258,9 +261,9 @@ namespace AppInstaller::Http
         // Since that is the one case that http_client_winhttp.cpp uses, we map it specifically.
         // In the event that this makes no sense, ERROR_THREAD_MODE_ALREADY_BACKGROUND is Win32 error 400.
         int errorValue = exception.error_code().value();
-        if (errorValue == web::http::status_codes::BadRequest)
+        if (errorValue == HTTP_STATUS_BAD_REQUEST)
         {
-            toThrow = MAKE_HRESULT(SEVERITY_ERROR, FACILITY_HTTP, web::http::status_codes::BadRequest);
+            toThrow = MAKE_HRESULT(SEVERITY_ERROR, FACILITY_HTTP, HTTP_STATUS_BAD_REQUEST);
         }
         else if (errorValue)
         {
