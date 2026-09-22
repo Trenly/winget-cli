@@ -171,6 +171,8 @@
     <ClInclude Include="DownloadResult.h" />
     <ClInclude Include="EditPackageCatalogOptions.h" />
     <ClInclude Include="EditPackageCatalogResult.h" />
+    <ClInclude Include="ErrorInformation.h" />
+    <ClInclude Include="ErrorInformationProvider.h" />
     <ClInclude Include="FindPackagesOptions.h" />
     <ClInclude Include="FindPackagesResult.h" />
     <ClInclude Include="Helpers.h" />
@@ -224,6 +226,8 @@
     <ClCompile Include="DownloadResult.cpp" />
     <ClCompile Include="EditPackageCatalogOptions.cpp" />
     <ClCompile Include="EditPackageCatalogResult.cpp" />
+    <ClCompile Include="ErrorInformation.cpp" />
+    <ClCompile Include="ErrorInformationProvider.cpp" />
     <ClCompile Include="FindPackagesOptions.cpp" />
     <ClCompile Include="FindPackagesResult.cpp" />
     <ClCompile Include="Helpers.cpp" />

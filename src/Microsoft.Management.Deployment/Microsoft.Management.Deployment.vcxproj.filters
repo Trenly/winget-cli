@@ -49,6 +49,8 @@
     <ClCompile Include="PackageCatalogProgress.cpp" />
     <ClCompile Include="EditPackageCatalogOptions.cpp" />
     <ClCompile Include="EditPackageCatalogResult.cpp" />
+    <ClCompile Include="ErrorInformation.cpp" />
+    <ClCompile Include="ErrorInformationProvider.cpp" />
     <ClCompile Include="CanUnload.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -104,6 +106,8 @@
     <ClInclude Include="PackageCatalogProgress.h" />
     <ClInclude Include="EditPackageCatalogOptions.h" />
     <ClInclude Include="EditPackageCatalogResult.h" />
+    <ClInclude Include="ErrorInformation.h" />
+    <ClInclude Include="ErrorInformationProvider.h" />
     <ClInclude Include="Public\CanUnload.h">
       <Filter>Public</Filter>
     </ClInclude>

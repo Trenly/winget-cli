@@ -2,6 +2,11 @@
 
 ## New Features
 
+### COM API error information
+
+Added `ErrorInformationProvider` and `ErrorInformation` to the `Microsoft.Management.Deployment` COM API (contract version 30), providing programmatic parity with the `winget error` command.
+`GetErrorInformation` looks up a single error code, `FindErrorInformation` searches the Windows Package Manager errors by symbol or description text, and `GetAllErrorInformation` returns every Windows Package Manager error with its unlocalized description.
+
 ### Output locale override
 
 Added a persistent `output.locale` setting to override winget interface language using a BCP47 tag.

@@ -35,6 +35,7 @@ CoCreatableClassWrlCreatorMapInclude(PackageManagerSettings);
 CoCreatableClassWrlCreatorMapInclude(RepairOptions);
 CoCreatableClassWrlCreatorMapInclude(AddPackageCatalogOptions);
 CoCreatableClassWrlCreatorMapInclude(RemovePackageCatalogOptions);
+CoCreatableClassWrlCreatorMapInclude(ErrorInformationProvider);
 
 // Shim for configuration static functions
 CoCreatableClassWrlCreatorMapInclude(ConfigurationStaticFunctionsShim);

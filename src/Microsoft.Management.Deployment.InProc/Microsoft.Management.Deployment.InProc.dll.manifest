@@ -111,5 +111,13 @@
         name="Microsoft.Management.Deployment.EditPackageCatalogOptions"
         threadingModel="both"
         xmlns="urn:schemas-microsoft-com:winrt.v1"/>
+    <comClass
+       clsid="{DF3140B9-DB9B-4A7E-A0BF-C11954762A22}"
+       threadingModel="Both"
+       description="ErrorInformationProvider"/>
+    <activatableClass
+        name="Microsoft.Management.Deployment.ErrorInformationProvider"
+        threadingModel="both"
+        xmlns="urn:schemas-microsoft-com:winrt.v1"/>
   </file>
 </assembly>

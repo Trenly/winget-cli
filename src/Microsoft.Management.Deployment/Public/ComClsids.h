@@ -18,6 +18,7 @@
 #define WINGET_OUTOFPROC_COM_CLSID_AddPackageCatalogOptions "DB9D012D-00D7-47EE-8FB1-606E10AC4F51"
 #define WINGET_OUTOFPROC_COM_CLSID_RemovePackageCatalogOptions "032B1C58-B975-469B-A013-E632B6ECE8D8"
 #define WINGET_OUTOFPROC_COM_CLSID_EditPackageCatalogOptions "A9F5E736-68CE-463C-BA6D-DE968F0CCE04"
+#define WINGET_OUTOFPROC_COM_CLSID_ErrorInformationProvider "A62485E2-7BAE-4421-9691-EF552B93FF19"
 #else
 #define WINGET_OUTOFPROC_COM_CLSID_PackageManager "74CB3139-B7C5-4B9E-9388-E6616DEA288C"
 #define WINGET_OUTOFPROC_COM_CLSID_FindPackagesOptions "1BD8FF3A-EC50-4F69-AEEE-DF4C9D3BAA96"
@@ -32,6 +33,7 @@
 #define WINGET_OUTOFPROC_COM_CLSID_AddPackageCatalogOptions "D58C7E4C-70E6-476C-A5D4-80341ED80252"
 #define WINGET_OUTOFPROC_COM_CLSID_RemovePackageCatalogOptions "87A96609-1A39-4955-BE72-7174E147B7DC"
 #define WINGET_OUTOFPROC_COM_CLSID_EditPackageCatalogOptions "29B19238-81AD-4A8E-A2FC-ADF17C38CAEB"
+#define WINGET_OUTOFPROC_COM_CLSID_ErrorInformationProvider "2FE42A6D-4537-44DE-8A57-434237FA98E2"
 #endif
 
 // Clsids only used in in-proc invocation
@@ -53,6 +55,7 @@ namespace winrt::Microsoft::Management::Deployment
     const CLSID WINGET_INPROC_COM_CLSID_AddPackageCatalogOptions = { 0x24e6f1fa, 0xe4c3, 0x4acd, 0x96, 0x5d, 0xdf, 0x21, 0x3f, 0xd5, 0x8f, 0x15 }; // {24E6F1FA-E4C3-4ACD-965D-DF213FD58F15}
     const CLSID WINGET_INPROC_COM_CLSID_RemovePackageCatalogOptions = { 0x1125d3a6, 0xe2ce, 0x479a, 0x91, 0xd5, 0x71, 0xa3, 0xf6, 0xf8, 0xb0, 0xb }; // {1125D3A6-E2CE-479A-91D5-71A3F6F8B00B}
     const CLSID WINGET_INPROC_COM_CLSID_EditPackageCatalogOptions = { 0xe8e12fe1, 0xab77, 0x40c4, 0xa5, 0x62, 0xe9, 0x1f, 0xb5, 0x1b, 0x4e, 0x82 }; // {E8E12FE1-AB77-40C4-A562-E91FB51B4E82}
+    const CLSID WINGET_INPROC_COM_CLSID_ErrorInformationProvider = { 0xdf3140b9, 0xdb9b, 0x4a7e, 0xa0, 0xbf, 0xc1, 0x19, 0x54, 0x76, 0x2a, 0x22 }; // {DF3140B9-DB9B-4A7E-A0BF-C11954762A22}
 
     CLSID GetRedirectedClsidFromInProcClsid(REFCLSID clsid);
 }

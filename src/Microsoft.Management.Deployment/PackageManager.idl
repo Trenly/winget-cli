@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 namespace Microsoft.Management.Deployment
 {
-    [contractversion(29)] // For version 1.29
+    [contractversion(30)] // For version 1.30
     apicontract WindowsPackageManagerContract{};
 
     /// State of the install
@@ -1637,6 +1637,47 @@ namespace Microsoft.Management.Deployment
         HRESULT ExtendedErrorCode { get; };
     };
 
+    /// IMPLEMENTATION NOTE: Information about a single error code, equivalent to the output of `winget error`.
+    /// DESIGN NOTE: The error code is an Int32 rather than an HRESULT because HRESULT is projected as an
+    /// exception object by some language projections, which makes it unusable as lookup data.
+    [contract(Microsoft.Management.Deployment.WindowsPackageManagerContract, 30)]
+    runtimeclass ErrorInformation
+    {
+        /// The error code that this information describes.
+        Int32 Value { get; };
+
+        /// The symbolic name of the error, for example "APPINSTALLER_CLI_ERROR_NO_APPLICABLE_INSTALLER".
+        /// This will be empty if the symbol is not known.
+        String Symbol { get; };
+
+        /// A description of the error.
+        String Description { get; };
+    };
+
+    /// IMPLEMENTATION NOTE: Provides access to information about error codes, equivalent to `winget error`.
+    [contract(Microsoft.Management.Deployment.WindowsPackageManagerContract, 30)]
+    runtimeclass ErrorInformationProvider
+    {
+        ErrorInformationProvider();
+
+        /// Gets the information for the given error code.
+        /// A result is always returned; errors that are not known to Windows Package Manager will use the
+        /// system provided description, and unknown Windows Package Manager errors will indicate as much.
+        /// The description is localized to the caller's language when a translation is available.
+        ErrorInformation GetErrorInformation(Int32 error);
+
+        /// Finds the Windows Package Manager errors whose symbol or description match the given text.
+        /// Matches are ordered by exact symbol match, then symbol substring match, then description
+        /// substring match. The descriptions are localized to the caller's language when a translation
+        /// is available. An empty collection is returned when nothing matches.
+        Windows.Foundation.Collections.IVectorView<ErrorInformation> FindErrorInformation(String searchText);
+
+        /// Gets the information for all errors defined by Windows Package Manager.
+        /// DESIGN NOTE: The descriptions returned here are always the unlocalized (English) values so that
+        /// the result can be used to generate documentation, matching `winget error --output <file>`.
+        Windows.Foundation.Collections.IVectorView<ErrorInformation> GetAllErrorInformation();
+    };
+
     [contract(Microsoft.Management.Deployment.WindowsPackageManagerContract, 1)]
     runtimeclass PackageManager
     {
@@ -1826,5 +1867,7 @@ namespace Microsoft.Management.Deployment
         interface Windows.Foundation.Collections.IVectorView<RepairOptions>;
         interface Windows.Foundation.Collections.IVector<RepairResult>;
         interface Windows.Foundation.Collections.IVectorView<RepairResult>;
+        interface Windows.Foundation.Collections.IVector<ErrorInformation>;
+        interface Windows.Foundation.Collections.IVectorView<ErrorInformation>;
     }
 }
