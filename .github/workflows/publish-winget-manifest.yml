@@ -1,9 +1,12 @@
 name: Publish winget-pkgs manifest
 
 on:
+  # Triggers when a new release is published
+  # Or when a release is converted from pre-release to latest
   release:
     types:
       - published
+      - edited
 
 jobs:
   publish-winget:
