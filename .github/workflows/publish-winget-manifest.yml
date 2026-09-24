@@ -5,7 +5,6 @@ on:
   # "released" fires when a release is published, or when a pre-release is converted to a full release
   release:
     types:
-      - published
       - released
 
 jobs:
@@ -18,7 +17,7 @@ jobs:
       pull-requests: write
 
     # Run only if this is a stable release
-    if: github.event.release.prerelease == false
+    # if: github.event.release.prerelease == false
 
     # winget-create is only supported on Windows
     runs-on: windows-latest
