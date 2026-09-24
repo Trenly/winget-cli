@@ -1,0 +1,60 @@
+name: Submit release to the WinGet community repository
+
+on:
+  release:
+    types:
+      - published
+
+jobs:
+  publish-winget:
+    name: Submit to WinGet repository
+
+    # GitHub token permissions needed for winget-create to submit a PR
+    permissions:
+      contents: read
+      pull-requests: write
+
+    # Run only if this is a stable release
+    if: github.event.release.prerelease == false
+
+    # winget-create is only supported on Windows
+    runs-on: windows-latest
+
+    # winget-create will read the following environment variable to access the GitHub token needed for submitting a PR
+    # See https://aka.ms/winget-create-token
+    env:
+      WINGET_CREATE_GITHUB_TOKEN: ${{ secrets.WINGET_CREATE_GITHUB_TOKEN }}
+      WINGET_CREATE_VERSION: 'v1.12.13.0'
+      WINGET_CREATE_EXPECTED_HASH: '24042bd37915805615e6cf969ac57c6439124c3fe85823327f5f3fb24bd9ffea'
+
+    steps:
+      - name: Download wingetcreate.exe
+        run: |
+          $wingetCreateDownloadUrl = "https://github.com/microsoft/winget-create/releases/download/" + $env:WINGET_CREATE_VERSION  + "/wingetcreate.exe"
+          curl.exe -JLO $wingetCreateDownloadUrl
+          $wingetCreateHash = (Get-FileHash .\wingetcreate.exe -ErrorAction SilentlyContinue).Hash
+
+          if ($wingetCreateHash -ine $env:WINGET_CREATE_EXPECTED_HASH) {
+            Write-Error "Expected hash of wingetcreate.exe to be $env:WINGET_CREATE_EXPECTED_HASH but received $wingetCreateHash"
+            exit 1
+          }
+      - name: Submit package using wingetcreate
+        run: |
+          # Set the package ID and version based on the release info
+          $packageId = 'Microsoft.AppInstaller'
+          $packageVersion = (${{ toJSON(github.event.release.tag_name) }}).TrimStart('v')
+
+          echo "Would have submitted $packageId version $packageVersion"
+          exit 0
+
+          # Get installer info from release event
+          $assets = '${{ toJSON(github.event.release.assets) }}' | ConvertFrom-Json
+
+          # Find the download URL
+          $installerUrl = $assets | Where-Object -Property name -like '*.msixbundle' | Select-Object -ExpandProperty browser_download_url
+
+          # Update the package and submit
+          .\wingetcreate.exe update $packageId `
+            --version $packageVersion `
+            --urls "$installerUrl|x86" "$installerUrl|x64" "$installerUrl|arm64" `
+            --submit
