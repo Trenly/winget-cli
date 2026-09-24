@@ -3,7 +3,7 @@ name: Publish winget-pkgs manifest
 on:
   release:
     types:
-      - released
+      - published
 
 jobs:
   publish-winget:
@@ -15,7 +15,6 @@ jobs:
       pull-requests: write
 
     # Run only if this is a stable release
-    # This check should be redundant due to `types` being `released`, but it's here for safety
     if: github.event.release.prerelease == false
 
     # winget-create is only supported on Windows
